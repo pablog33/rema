@@ -28,6 +28,18 @@
 #include "poncho_rdc.h"
 #include "relay.h"
 #include "rtu_com_hmi.h"
+#include "eeprom.h"
+#include "lwip/ip_addr.h"
+
+
+/* Auto programming on/off */
+#define AUTOPROG_ON     1
+
+/* Page used for storage */
+#define PAGE_ADDR       0x01/* Page number */
+
+/* Read/write buffer (32-bit aligned) */
+uint32_t buffer[EEPROM_PAGE_SIZE / sizeof(uint32_t)];
 
 /* GPa 201117 1850 Iss2: agregado de Heap_4.c*/
 uint8_t __attribute__((section ("." "data" ".$" "RamLoc40"))) ucHeap[ configTOTAL_HEAP_SIZE ]; 
@@ -54,6 +66,48 @@ static void prvSetupHardware(void)
 	lift_init();
 	temperature_init();
 
+
+	uint8_t *ptr = (uint8_t*) buffer;
+
+	/* Init EEPROM */
+	Chip_EEPROM_Init(LPC_EEPROM);
+
+#if AUTOPROG_ON
+	/* Set Auto Programming mode */
+	Chip_EEPROM_SetAutoProg(LPC_EEPROM, EEPROM_AUTOPROG_AFT_1WORDWRITTEN);
+#else
+	/* Set Auto Programming mode */
+	Chip_EEPROM_SetAutoProg(LPC_EEPROM,EEPROM_AUTOPROG_OFF);
+#endif /*AUTOPROG_ON*/
+
+//	/* Read all data from EEPROM page */
+//	EEPROM_Read(0, PAGE_ADDR, (uint32_t*) ptr, EEPROM_PAGE_SIZE);
+//
+//	/* Erase page */
+//	EEPROM_Erase(PAGE_ADDR);
+//
+//	DEBUGSTR("\r\nEEPROM write...\r\n");
+//
+//	EEPROM_Write(0, PAGE_ADDR, (uint32_t*) ptr, 8);
+//	DEBUGSTR("Reading back string...\r\n");
+
+#define ip_addr_print(ipaddr) \
+  printf("%hhu.%hhu.%hhu.%hhu",         \
+	  ip4_addr1(ipaddr),       \
+	  ip4_addr2(ipaddr),       \
+	  ip4_addr3(ipaddr),       \
+	  ip4_addr4(ipaddr))
+
+	ip_addr_t ipaddr, netmask, gw;
+
+	IP4_ADDR(&gw, 192, 168, 1, 1);
+	IP4_ADDR(&ipaddr, 192, 168, 1, 20);
+	IP4_ADDR(&netmask, 255, 255, 255, 0);
+
+	/* Read all data from EEPROM page */
+	EEPROM_Read(0, PAGE_ADDR, (uint32_t*) ptr, EEPROM_PAGE_SIZE);
+
+	ip_addr_print(&((uint32_t*) ptr)[1]);
 			  
 	/* Utilizo el led spare para detectar conexión fisica del cable ethernet */
 	relay_spare_led(0); /* LOW */

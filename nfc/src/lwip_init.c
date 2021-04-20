@@ -67,7 +67,7 @@ void vStackIpSetup(void *pvParameters) {
 	IP4_ADDR(&netmask, 0, 0, 0, 0);
 #else
 	IP4_ADDR(&gw, 192, 168, 1, 1);
-	IP4_ADDR(&ipaddr, 192, 168, 1, 20);
+	IP4_ADDR(&ipaddr, 192, 168, 2, 20);
 	IP4_ADDR(&netmask, 255, 255, 255, 0);
 #endif
 
