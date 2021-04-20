@@ -30,7 +30,9 @@
 #include "rtu_com_hmi.h"
 #include "eeprom.h"
 #include "lwip/ip_addr.h"
+#include "tcp_server.h"
 
+bool stall_detection = true;
 
 /* Auto programming on/off */
 #define AUTOPROG_ON     1

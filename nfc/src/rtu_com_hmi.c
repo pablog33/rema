@@ -37,12 +37,12 @@ int retransm(struct netconn *newconn, struct netbuf *buf)
 		char ack_buff[5];
 		sprintf(ack_buff, "%04x", ack_len);
 
-		if ((err = netconn_write(newconn, &ack_buff, 4, NETCONN_NOCOPY))
+		if ((err = netconn_write(newconn, &ack_buff, 4, NETCONN_COPY))
 				!= ERR_OK) {
 			goto error_free_tx_buffer;
 		}
 
-		if ((err = netconn_write(newconn, tx_buffer, ack_len, NETCONN_NOCOPY))
+		if ((err = netconn_write(newconn, tx_buffer, ack_len, NETCONN_COPY))
 				!= ERR_OK) {
 			goto error_free_tx_buffer;
 		}
@@ -95,8 +95,8 @@ static void tcp_thread(void *arg)
 		}
 
 		lDebug(Error, "Error en funcion NETCONN -netbuf_data-");
-		prvNetconnError(err);
-		prvEmergencyStop();
+		//prvNetconnError(err);
+		//prvEmergencyStop();
 		lDebug(Info, "	- ** 	Desconexion RTU 	** - ");
 	}
 }

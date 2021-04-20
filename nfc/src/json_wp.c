@@ -48,7 +48,8 @@ int json_wp(char *rx_buff, char **tx_buff)
 {
 	JSON_Value *rx_JSON_value = json_parse_string(rx_buff);
 	JSON_Value *tx_JSON_value = json_value_init_object();
-
+	*tx_buff = NULL;
+	int buff_len = 0;
 
 	if (!rx_JSON_value || (json_value_get_type(rx_JSON_value) != JSONObject)) {
 		lDebug(Info, "Error json parse.");
@@ -73,18 +74,16 @@ int json_wp(char *rx_buff, char **tx_buff)
 			}
 		}
 
-		int buff_len = json_serialization_size(tx_JSON_value); /* returns 0 on fail */
+		buff_len = json_serialization_size(tx_JSON_value); /* returns 0 on fail */
 		*tx_buff = pvPortMalloc(buff_len);
 		if (!(*tx_buff)) {
 			lDebug(Error, "Out Of Memory");
 			buff_len = 0;
 		} else {
 			json_serialize_to_buffer(tx_JSON_value, *tx_buff, buff_len);
-			lDebug(Info, "To send %d bytes: %s", buff_len, *tx_buff);
 		}
-		json_value_free(rx_JSON_value);
-		json_value_free(tx_JSON_value);
-		return buff_len;
 	}
-	return 0;
+	json_value_free(rx_JSON_value);
+	json_value_free(tx_JSON_value);
+	return buff_len;
 }

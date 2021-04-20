@@ -20,7 +20,7 @@
 #include "arch/lpc_arch.h"
 #include "arch/sys_arch.h"
 #include "lpc_phy.h" /* For the PHY monitor support */
-#include "rtu_com_hmi.h"
+//#include "rtu_com_hmi.h"
 #include "debug.h"
 
 /* When building the example to run in FLASH, the number of available
