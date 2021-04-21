@@ -21,6 +21,8 @@ uint16_t arm_get_RDC_position();
 
 void arm_set_offset(uint16_t offset);
 
+JSON_Value *arm_json(void);
+
 #ifdef __cplusplus
 }
 #endif

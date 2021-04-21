@@ -1,10 +1,14 @@
 #ifndef EEPROM_H_
 #define EEPROM_H_
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/* Init EEPROM */
+void EEPROM_init(void);
 
 /* Read data from EEPROM */
 /* size must be multiple of 4 bytes */

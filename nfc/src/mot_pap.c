@@ -247,12 +247,12 @@ void mot_pap_update_position(struct mot_pap *me)
 			me->offset, me->rdc->resolution);
 }
 
-JSON_Value *mot_pap_json(struct mot_pap const *data) {
+JSON_Value *mot_pap_json(struct mot_pap *me) {
 	JSON_Value * ans = json_value_init_object();
-	json_object_set_number(json_value_get_object(ans), "posCmd", data->posCmd);
-	json_object_set_number(json_value_get_object(ans), "posAct", data->posAct);
-	json_object_set_boolean(json_value_get_object(ans), "stalled", data->stalled);
-	json_object_set_number(json_value_get_object(ans), "offset", data->offset);
+	json_object_set_number(json_value_get_object(ans), "posCmd", me->posCmd);
+	json_object_set_number(json_value_get_object(ans), "posAct", me->posAct);
+	json_object_set_boolean(json_value_get_object(ans), "stalled", me->stalled);
+	json_object_set_number(json_value_get_object(ans), "offset", me->offset);
 	return ans;
 }
 

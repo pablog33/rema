@@ -174,3 +174,10 @@ struct mot_pap *arm_get_status(void)
 	return &arm;
 }
 
+/**
+ * @brief	returns status of the pole task in json format.
+ * @return  pointer to JSON_Value
+ */
+JSON_Value *arm_json(void) {
+	return mot_pap_json(&arm);
+}

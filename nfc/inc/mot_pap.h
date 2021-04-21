@@ -97,7 +97,7 @@ void mot_pap_isr(struct mot_pap *me);
 void mot_pap_update_position(struct mot_pap *me);
 uint32_t mot_pap_read_on_condition(void);
 
-JSON_Value *mot_pap_json(struct mot_pap const *data);
+JSON_Value *mot_pap_json(struct mot_pap *me);
 
 extern QueueHandle_t lift_queue;
 extern QueueHandle_t pole_queue;

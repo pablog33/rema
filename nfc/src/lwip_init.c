@@ -20,8 +20,16 @@
 #include "arch/lpc_arch.h"
 #include "arch/sys_arch.h"
 #include "lpc_phy.h" /* For the PHY monitor support */
-//#include "rtu_com_hmi.h"
+#include "settings.h"
+#include "tcp_server.h"
 #include "debug.h"
+
+#define ip_addr_print(ipaddr) \
+  printf("IP ADDRESS FROM EEPROM = %hhu.%hhu.%hhu.%hhu",         \
+	  ip4_addr1(ipaddr),       \
+	  ip4_addr2(ipaddr),       \
+	  ip4_addr3(ipaddr),       \
+	  ip4_addr4(ipaddr))
 
 /* When building the example to run in FLASH, the number of available
    pbufs and memory size (in lwipopts.h) and the number of descriptors
@@ -66,9 +74,11 @@ void vStackIpSetup(void *pvParameters) {
 	IP4_ADDR(&ipaddr, 0, 0, 0, 0);
 	IP4_ADDR(&netmask, 0, 0, 0, 0);
 #else
-	IP4_ADDR(&gw, 192, 168, 1, 1);
-	IP4_ADDR(&ipaddr, 192, 168, 2, 20);
-	IP4_ADDR(&netmask, 255, 255, 255, 0);
+	struct settings settings = settings_read();
+
+	ipaddr = settings.ipaddr;
+	gw = settings.gw;
+	netmask = settings.netmask;
 #endif
 
 	/* Add netif interface  */

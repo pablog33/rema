@@ -52,7 +52,7 @@ int json_wp(char *rx_buff, char **tx_buff)
 	int buff_len = 0;
 
 	if (!rx_JSON_value || (json_value_get_type(rx_JSON_value) != JSONObject)) {
-		lDebug(Info, "Error json parse.");
+		lDebug(Error, "Error json parse.");
 	} else {
 		JSON_Object *rx_JSON_object = json_value_get_object(rx_JSON_value);
 		JSON_Array *commands = json_object_get_array(rx_JSON_object,

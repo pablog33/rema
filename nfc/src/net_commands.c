@@ -4,11 +4,14 @@
 #include "debug.h"
 
 #include "net_commands.h"
-#include "mot_pap.h"
+#include "pole.h"
+#include "arm.h"
 #include "parson.h"
 #include "json_wp.h"
 
 #define PROTOCOL_VERSION  	"JSON_1.0"
+
+bool stall_detection = true;
 
 typedef struct {
 	char *cmd_name;
@@ -17,20 +20,9 @@ typedef struct {
 
 JSON_Value* telemetria_cmd(JSON_Value const *pars)
 {
-	struct mot_pap arm;
-	static int fake_pos = 123;
-
-	fake_pos++;
-	arm.posCmd = 848;
-	arm.posAct = fake_pos;
-	arm.stalled = false;
-	arm.offset = 40510;
-
 	JSON_Value *ans = json_value_init_object();
-	json_object_set_value(json_value_get_object(ans), "ARM",
-			mot_pap_json(&arm));
-	json_object_set_value(json_value_get_object(ans), "POLE",
-			mot_pap_json(&arm));
+	json_object_set_value(json_value_get_object(ans), "ARM", arm_json());
+	json_object_set_value(json_value_get_object(ans), "POLE", pole_json());
 	return ans;
 }
 
@@ -68,7 +60,8 @@ JSON_Value* lift_cmd(JSON_Value const *pars)
 JSON_Value* protocol_version_cmd(JSON_Value const *pars)
 {
 	JSON_Value *ans = json_value_init_object();
-	json_object_set_string(json_value_get_object(ans), "Version", PROTOCOL_VERSION);
+	json_object_set_string(json_value_get_object(ans), "Version",
+			PROTOCOL_VERSION);
 	return ans;
 }
 
@@ -90,7 +83,6 @@ JSON_Value* pole_closed_loop_cmd(JSON_Value const *pars)
 	json_object_set_boolean(json_value_get_object(ans), "ACK", true);
 	return ans;
 }
-
 
 JSON_Value* arm_free_run_cmd(JSON_Value const *pars)
 {
@@ -142,8 +134,6 @@ const cmd_entry cmds_table[] = {
 		},
 };
 // @formatter:on
-
-
 /**
  * @brief 	searchs for a matching command name in cmds_table[], passing the parameters
  * 			as a JSON object for the called function to parse them.
