@@ -8,6 +8,7 @@
 #include "arm.h"
 #include "parson.h"
 #include "json_wp.h"
+#include "settings.h"
 
 #define PROTOCOL_VERSION  	"JSON_1.0"
 
@@ -61,7 +62,7 @@ JSON_Value* protocol_version_cmd(JSON_Value const *pars)
 {
 	JSON_Value *ans = json_value_init_object();
 	json_object_set_string(json_value_get_object(ans), "Version",
-			PROTOCOL_VERSION);
+	PROTOCOL_VERSION);
 	return ans;
 }
 
@@ -102,6 +103,61 @@ JSON_Value* arm_free_run_cmd(JSON_Value const *pars)
 	return NULL;
 }
 
+JSON_Value* network_settings_cmd(JSON_Value const *pars)
+{
+	if (pars && json_value_get_type(pars) == JSONObject) {
+		char const *gw = json_object_get_string(json_value_get_object(pars),
+				"gw");
+		char const *ipaddr = json_object_get_string(json_value_get_object(pars),
+				"ipaddr");
+		char const *netmask = json_object_get_string(
+				json_value_get_object(pars), "netmask");
+		uint16_t port = (uint16_t) json_object_get_number(
+				json_value_get_object(pars), "port");
+
+		if (gw && ipaddr && netmask && port != 0) {
+			lDebug(Info,
+					"Received network settings: gw:%s, ipaddr:%s, netmask:%s, port:%d",
+					gw, ipaddr, netmask, port);
+
+			struct settings settings;
+
+			unsigned char *gw_bytes = (unsigned char*) &(settings.gw.addr);
+			if (sscanf(gw, "%hu.%hu.%hu.%hu", &gw_bytes[0], &gw_bytes[1],
+					&gw_bytes[2], &gw_bytes[3]) == 4) {
+			}
+
+			unsigned char *ipaddr_bytes =
+					(unsigned char*) &(settings.ipaddr.addr);
+			if (sscanf(ipaddr, "%hu.%hu.%hu.%hu", &ipaddr_bytes[0],
+					&ipaddr_bytes[1], &ipaddr_bytes[2], &ipaddr_bytes[3])
+					== 4) {
+			}
+
+			unsigned char *netmask_bytes =
+					(unsigned char*) &(settings.netmask.addr);
+			if (sscanf(netmask, "%hu.%hu.%hu.%hu", &netmask_bytes[0],
+					&netmask_bytes[1], &netmask_bytes[2], &netmask_bytes[3])
+					== 4) {
+			}
+
+			settings.port = port;
+
+			settings_save(settings);
+			lDebug(Info, "Settings saved. Restarting...");
+
+			Chip_UART_SendBlocking(DEBUG_UART, "\n\n", 2);
+
+			Chip_RGU_TriggerReset(RGU_CORE_RST);
+		}
+
+		JSON_Value *ans = json_value_init_object();
+		json_object_set_boolean(json_value_get_object(ans), "ACK", true);
+		return ans;
+	}
+	return NULL;
+}
+
 // @formatter:off
 const cmd_entry cmds_table[] = {
 		{
@@ -132,6 +188,11 @@ const cmd_entry cmds_table[] = {
 				"LOGS",
 				logs_cmd,
 		},
+		{
+				"NETWORK_SETTINGS",
+				network_settings_cmd,
+		},
+
 };
 // @formatter:on
 /**

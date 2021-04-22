@@ -18,6 +18,8 @@ struct settings {
 
 void settings_init();
 
+void settings_erase(void);
+
 void settings_save(struct settings settings);
 
 struct settings settings_read();

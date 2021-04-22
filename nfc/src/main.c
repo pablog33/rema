@@ -48,6 +48,8 @@ static void prvSetupHardware(void)
 	debugInit();
 
 	Board_Init();
+	settings_init();
+	//settings_erase();
 	dout_init();
 	relay_init();
 	poncho_rdc_init();
@@ -56,7 +58,6 @@ static void prvSetupHardware(void)
     pole_init();
 	lift_init();
 	temperature_init();
-	settings_init();
 
 	/* Utilizo el led spare para detectar conexión fisica del cable ethernet */
 	relay_spare_led(0); /* LOW */

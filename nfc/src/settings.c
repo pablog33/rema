@@ -28,6 +28,16 @@ void settings_init(struct settings settings)
 }
 
 /**
+ * @brief 	erases EEPROM page containing settings
+ * @return	nothing
+ */
+void settings_erase(void)
+{
+	lDebug(Info, "EEPROM Erase...");
+	EEPROM_Erase(PAGE_ADDR);
+}
+
+/**
  * @brief 	saves settings to EEPROM
  * @return	nothing
  */
@@ -51,8 +61,10 @@ struct settings settings_read()
 
 	if ((settings.gw.addr == 0) || (settings.ipaddr.addr == 0)
 			|| (settings.netmask.addr == 0) || (settings.port == 0)) {
-		lDebug(Error, "No network config loaded from EEPROM. Loading default settings");
+		lDebug(Info, "No network config loaded from EEPROM. Loading default settings");
 		return settings_defaults();
+	} else {
+		lDebug(Info, "Using settings loaded from EEPROM");
 	}
 
 	return settings;

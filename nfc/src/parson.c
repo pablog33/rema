@@ -40,7 +40,7 @@
 
 /* Apparently sscanf is not implemented in some "standard" libraries, so don't use it, if you
  * don't have to. */
-#define sscanf THINK_TWICE_ABOUT_USING_SSCANF
+//#define sscanf THINK_TWICE_ABOUT_USING_SSCANF
 
 #define STARTING_CAPACITY 16
 #define MAX_NESTING       2048
