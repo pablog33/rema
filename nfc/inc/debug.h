@@ -19,12 +19,12 @@
  * <p>
  * To easily print the value of a <b>single</b> variable, use
  * <pre><tt>
-   vDebug("format", var); // "format" is the specifier (e.g. "%d" or "%s", etc)
+ vDebug("format", var); // "format" is the specifier (e.g. "%d" or "%s", etc)
  * </tt></pre>
  * <p>
  * To use debug(), but control when it prints, use
  * <pre><tt>
-   lDebug(level, "format", var); // print when debugLevel >= level
+ lDebug(level, "format", var); // print when debugLevel >= level
  * </tt></pre>
  * <p>
  * Based on code and ideas found
@@ -37,6 +37,9 @@
  */
 
 #include <stdio.h>
+#include <stdarg.h>
+#include <stdbool.h>
+
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
@@ -46,51 +49,54 @@ extern "C" {
 #endif
 
 enum debugLevels {
-    Debug,
-	Info,
-	Warn,
-    Error,
+	Debug, Info, InfoLocal, Warn, Error,
 };
 
-static inline const char * levelText(enum debugLevels level) {
+static inline const char* levelText(enum debugLevels level)
+{
 	const char *ret;
 	switch (level) {
-		case Debug:
-			ret = "Debug";
-			break;
-		case Info:
-			ret = "Info";
-			break;
-		case Warn:
-			ret = "Warn";
-			break;
-		case Error:
-			ret = "Error";
-			break;
-		default:
-			ret = "";
-			break;
+	case Debug:
+		ret = "Debug";
+		break;
+	case Info:
+	case InfoLocal:
+		ret = "Info";
+		break;
+	case Warn:
+		ret = "Warn";
+		break;
+	case Error:
+		ret = "Error";
+		break;
+	default:
+		ret = "";
+		break;
 	}
 	return ret;
 }
-
 
 /**
  * controls how much debug output is produced. Higher values produce more
  * output. See the use in <tt>lDebug()</tt>.
  */
-extern enum debugLevels debugLevel;
+extern enum debugLevels debugLocalLevel;
+extern enum debugLevels debugNetLevel;
 extern SemaphoreHandle_t uart_mutex;
+extern QueueHandle_t debug_queue;
+extern bool debug_to_network;
 
 /**
  * The file where debug output is written. Defaults to <tt>stderr</tt>.
  * <tt>debugToFile()</tt> allows output to any file.
  */
-extern FILE* debugFile;
+extern FILE *debugFile;
 
 void debugInit(void);
 
-void debugSetLevel(enum debugLevels lvl);
+void debugLocalSetLevel(enum debugLevels lvl);
+
+void debugNetSetLevel(enum debugLevels lvl);
 
 void debugToFile(const char *fileName);
 
@@ -127,6 +133,37 @@ void debugClose(void);
 /** Simple alias for <tt>lDebug()</tt> */
 #define debug(fmt, ...) lDebug(1, fmt, ##__VA_ARGS__)
 
+static inline char* make_message(const char *fmt, ...)
+{
+	int size = 0;
+	char *p = NULL;
+	va_list ap;
+
+	/* Determine required size */
+
+	va_start(ap, fmt);
+	size = vsnprintf(p, size, fmt, ap);
+	va_end(ap);
+
+	if (size < 0)
+		return NULL;
+
+	size++; /* For '\0' */
+	p = pvPortMalloc(size);
+	if (p == NULL)
+		return NULL;
+
+	va_start(ap, fmt);
+	size = vsnprintf(p, size, fmt, ap);
+	if (size < 0) {
+		vPortFree(p);
+		return NULL;
+	}
+	va_end(ap);
+
+	return p;
+}
+
 /**
  * @brief prints this message if the variable <tt>debugLevel</tt> is greater
  * than or equal to the parameter.
@@ -135,15 +172,23 @@ void debugClose(void);
  */
 #define lDebug(level, fmt, ...) \
 do { \
-		if (DEBUG_ENABLED && (debugLevel <= level)) { \
+		if (DEBUG_ENABLED && (debugLocalLevel <= level)) { \
 			if (uart_mutex != NULL) {	\
 				if (xSemaphoreTake(uart_mutex, portMAX_DELAY) == pdTRUE) { \
 					printf("%u - %s %s[%d] %s() " fmt "\n", xTaskGetTickCount(), \
-							levelText(level), __FILE__, __LINE__, __func__, ##__VA_ARGS__); \
+					levelText(level), __FILE__, __LINE__, __func__, ##__VA_ARGS__); \
 					xSemaphoreGive(uart_mutex); \
-				}\
-			}\
+				} \
+			} \
        }\
+	   \
+	   if (DEBUG_ENABLED && debug_to_network && (debugNetLevel <= level) && (level != InfoLocal)) {\
+		   	char *dbg_msg = make_message("%u - %s %s[%d] %s() " fmt "\n", xTaskGetTickCount(), \
+				levelText(level), __FILE__, __LINE__, __func__, ##__VA_ARGS__); \
+			if (xQueueSend(debug_queue, &dbg_msg, (TickType_t) 0) != pdPASS) { \
+				vPortFree(dbg_msg); \
+			} \
+	   } \
 } while(0)
 
 #ifdef __cplusplus

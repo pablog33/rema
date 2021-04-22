@@ -1,12 +1,18 @@
 #include "debug.h"
 
 #include <stdio.h>
+#include <stdbool.h>
 
 #include "FreeRTOS.h"
 #include "task.h"
+#include "queue.h"
 #include "semphr.h"
 
-enum debugLevels debugLevel = Info;
+enum debugLevels debugLocalLevel = Info;
+enum debugLevels debugNetLevel = Info;
+
+QueueHandle_t debug_queue = NULL;
+bool debug_to_network = true;
 
 FILE *debugFile = NULL;
 
@@ -15,15 +21,26 @@ SemaphoreHandle_t uart_mutex;
 void debugInit(void)
 {
 	uart_mutex = xSemaphoreCreateMutex();
+	debug_queue = xQueueCreate(10, sizeof(char *));
+
 }
 
 /**
- * @brief 	sets debug level.
- * @param 	lvl 	:name of file to send output to
+ * @brief 	sets local debug level.
+ * @param 	lvl 	:minimum level to print
  */
-void debugSetLevel(enum debugLevels lvl)
+void debugLocalSetLevel(enum debugLevels lvl)
 {
-	debugLevel = lvl;
+	debugLocalLevel = lvl;
+}
+
+/**
+ * @brief 	sets debug level to send to network.
+ * @param 	lvl 	:minimum level to print
+ */
+void debugNetSetLevel(enum debugLevels lvl)
+{
+	debugNetLevel = lvl;
 }
 
 /**

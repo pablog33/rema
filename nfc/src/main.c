@@ -84,8 +84,10 @@ void msDelay(uint32_t ms)
  */
 int main(void)
 {
+	debugLocalSetLevel(Info);
+	debugNetSetLevel(Error);
+
 	prvSetupHardware();
-	debugSetLevel(Info);
 
 	/* Task - Ethernet PHY Initialization  */
 	xTaskCreate(vStackIpSetup, "StackIpSetup",

@@ -35,11 +35,17 @@ JSON_Value* logs_cmd(JSON_Value const *pars)
 
 		JSON_Value *ans = json_value_init_object();
 		JSON_Value *msg_array = json_value_init_array();
-		char msg[50];
 
-		for (int x = 0; x < quantity; x++) {
-			snprintf(msg, 50, "Mensaje de debug numero %i ", x);
-			json_array_append_string(json_value_get_array(msg_array), msg);
+		int msgs_waiting = uxQueueMessagesWaiting(debug_queue);
+
+		int extract = MIN(quantity, msgs_waiting);
+
+		for (int x = 0; x < extract; x++) {
+			char *dbg_msg = NULL;
+			if (xQueueReceive(debug_queue, &dbg_msg, (TickType_t) 0) == pdPASS) {
+				json_array_append_string(json_value_get_array(msg_array), dbg_msg);
+				vPortFree(dbg_msg);
+			}
 		}
 
 		json_object_set_value(json_value_get_object(ans), "DEBUG_MSGS",

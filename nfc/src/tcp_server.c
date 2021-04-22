@@ -41,7 +41,7 @@ static void do_retransmit(const int sock)
 
 			int ack_len = json_wp(rx_buffer, &tx_buffer);
 
-			lDebug(Info, "To send %d bytes: %s", ack_len, tx_buffer);
+			lDebug(InfoLocal, "To send %d bytes: %s", ack_len, tx_buffer);
 
 			if (ack_len > 0) {
 				// send() can return less bytes than supplied length.
