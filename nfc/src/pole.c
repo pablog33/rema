@@ -30,7 +30,7 @@ static struct ad2s1210 rdc;
 /**
  * @brief 	handles the Pole movement.
  * @param 	par		: unused
- * @return	never
+ * @returns	never
  * @note	Receives commands from pole_queue
  */
 static void pole_task(void *par)
@@ -70,7 +70,7 @@ static void pole_task(void *par)
 /**
  * @brief	checks if stalled and if position reached in closed loop.
  * @param 	par	: unused
- * @return	never
+ * @returns	never
  */
 static void pole_supervisor_task(void *par)
 {
@@ -82,7 +82,7 @@ static void pole_supervisor_task(void *par)
 
 /**
  * @brief 	creates the queues, semaphores and endless tasks to handle pole movements.
- * @return	nothing
+ * @returns	nothing
  */
 void pole_init()
 {
@@ -135,7 +135,7 @@ void pole_init()
 
 /**
  * @brief	handle interrupt from 32-bit timer to generate pulses for the stepper motor drivers
- * @return	nothing
+ * @returns	nothing
  * @note 	calls the supervisor task every x number of generated steps
  */
 void TIMER0_IRQHandler(void)
@@ -147,7 +147,7 @@ void TIMER0_IRQHandler(void)
 
 /**
  * @brief	gets pole RDC position
- * @return	RDC position
+ * @returns	RDC position
  */
 uint16_t pole_get_RDC_position()
 {
@@ -158,7 +158,7 @@ uint16_t pole_get_RDC_position()
 /**
  * @brief	sets pole offset
  * @param 	offset		: RDC position for 0 degrees
- * @return	nothing
+ * @returns	nothing
  */
 void pole_set_offset(uint16_t offset)
 {
@@ -177,7 +177,7 @@ struct mot_pap *pole_get_status(void)
 
 /**
  * @brief	returns status of the pole task in json format.
- * @return  pointer to JSON_Value
+ * @returns pointer to JSON_Value
  */
 JSON_Value *pole_json(void) {
 	return mot_pap_json(&pole);

@@ -29,7 +29,7 @@ static struct ad2s1210 rdc;
 /**
  * @brief 	handles the arm movement.
  * @param 	par		: unused
- * @return	never
+ * @returns	never
  * @note	Receives commands from arm_queue
  */
 static void arm_task(void *par)
@@ -69,7 +69,7 @@ static void arm_task(void *par)
 /**
  * @brief	checks if stalled and if position reached in closed loop.
  * @param 	par	: unused
- * @return	never
+ * @returns	never
  */
 static void arm_supervisor_task(void *par)
 {
@@ -81,7 +81,7 @@ static void arm_supervisor_task(void *par)
 
 /**
  * @brief 	creates the queues, semaphores and endless tasks to handle arm movements.
- * @return	nothing
+ * @returns	nothing
  */
 void arm_init()
 {
@@ -134,7 +134,7 @@ void arm_init()
 
 /**
  * @brief	handle interrupt from 32-bit timer to generate pulses for the stepper motor drivers
- * @return	nothing
+ * @returns	nothing
  * @note 	calls the supervisor task every x number of generated steps
  */
 void TIMER1_IRQHandler(void)
@@ -146,7 +146,7 @@ void TIMER1_IRQHandler(void)
 
 /**
  * @brief	gets arm RDC position
- * @return	RDC position
+ * @returns	RDC position
  */
 uint16_t arm_get_RDC_position()
 {
@@ -157,7 +157,7 @@ uint16_t arm_get_RDC_position()
 /**
  * @brief	sets arm offset
  * @param 	offset		: RDC position for 0 degrees
- * @return	nothing
+ * @returns	nothing
  */
 void arm_set_offset(uint16_t offset)
 {
@@ -166,7 +166,7 @@ void arm_set_offset(uint16_t offset)
 
 /**
  * @brief	returns status of the arm task.
- * @return 	copy of status structure of the task
+ * @returns copy of status structure of the task
  */
 struct mot_pap *arm_get_status(void)
 {
@@ -176,7 +176,7 @@ struct mot_pap *arm_get_status(void)
 
 /**
  * @brief	returns status of the pole task in json format.
- * @return  pointer to JSON_Value
+ * @returns pointer to JSON_Value
  */
 JSON_Value *arm_json(void) {
 	return mot_pap_json(&arm);

@@ -6,7 +6,7 @@
 
 /**
  * @brief 	initializes DOUTs
- * @return	nothing
+ * @returns	nothing
  */
 void dout_init()
 {
@@ -28,7 +28,7 @@ void dout_init()
  * @param 	dir		: direction of movement. Should be:
  * 					  MOT_PAP_DIRECTION_CW
  * 					  MOT_PAP_DIRECTION_CCW
- * @return	nothing
+ * @returns	nothing
  */
 void dout_arm_dir(enum mot_pap_direction dir)
 {
@@ -41,7 +41,7 @@ void dout_arm_dir(enum mot_pap_direction dir)
 
 /**
  * @brief	toggles GPIO corresponding to DOUT5 where ARM_PULSE is connected
- * @return 	nothing
+ * @returns nothing
  */
 void dout_arm_pulse(void)
 {
@@ -53,7 +53,7 @@ void dout_arm_pulse(void)
  * @param 	dir		: direction of movement. Should be:
  * 					  MOT_PAP_DIRECTION_CW
  * 					  MOT_PAP_DIRECTION_CCW
- * @return 	nothing
+ * @returns	nothing
  */
 void dout_pole_dir(enum mot_pap_direction dir)
 {
@@ -66,7 +66,7 @@ void dout_pole_dir(enum mot_pap_direction dir)
 
 /**
  * @brief	toggles GPIO corresponding to DOUT7 where POLE_PULSE is connected
- * @return 	nothing
+ * @returns nothing
  */
 void dout_pole_pulse(void)
 {

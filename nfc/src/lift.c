@@ -21,7 +21,7 @@ static struct lift lift;
 /**
  * @brief 	handles the Lift movement.
  * @param 	par		: unused
- * @return	never
+ * @returns	never
  * @note	Receives commands from lift_queue
  */
 static void lift_task(void *par)
@@ -77,7 +77,7 @@ static void lift_task(void *par)
 
 /**
  * @brief 	creates the queues, semaphores and endless tasks to handle lift movements.
- * @return	nothing
+ * @returns	nothing
  */
 void lift_init()
 {
@@ -95,7 +95,7 @@ void lift_init()
 
 /**
  * @brief	returns status of the lift task.
- * @return 	copy of status structure of the task
+ * @returns	copy of status structure of the task
  */
 struct lift *lift_status_get(void) /* GPa 201207 retorna (*) */
 {

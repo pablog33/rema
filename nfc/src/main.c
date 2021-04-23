@@ -70,7 +70,7 @@ static void prvSetupHardware(void)
 /**
  * @brief	MilliSecond delay function based on FreeRTOS
  * @param	ms	: Number of milliSeconds to delay
- * @return	Nothing
+ * @returns	nothing
  * Needed for some functions, do not use prior to FreeRTOS running
  */
 void msDelay(uint32_t ms)
@@ -80,7 +80,7 @@ void msDelay(uint32_t ms)
 
 /**
  * @brief	main routine for example_lwip_tcpec+ho_freertos_18xx43xx
- * @return	Function should not exit
+ * @returns	function should not exit
  */
 int main(void)
 {

@@ -8,7 +8,7 @@
 
 /**
  * @brief 	initializes RELAYs
- * @return	nothing
+ * @returns	nothing
  * @note	outputs are set to low
  */
 void relay_init()
@@ -36,7 +36,7 @@ void relay_init()
 /**
  * @brief	sets GPIO corresponding to DOUT1 where MAIN_PWR relay is connected
  * @param 	state	: boolean value for the output
- * @return	nothing
+ * @returns	nothing
  */
 void relay_main_pwr(bool state)
 {
@@ -50,7 +50,7 @@ void relay_main_pwr(bool state)
 /**
  * @brief	sets GPIO corresponding to DOUT1 where LIFT_PWR relay is connected
  * @param 	state	: boolean value for the output
- * @return	nothing
+ * @returns	nothing
  */
 void relay_lift_pwr(bool state)
 {
@@ -67,7 +67,7 @@ void relay_lift_pwr(bool state)
  * @param 	dir		: direction of movement. Should be:
  * 					  LIFT_DIRECTION_UP
  * 					  LIFT_DIRECTION_DOWN
- * @return	nothing
+ * @returns	nothing
  */
 void relay_lift_dir(enum lift_direction dir)
 {
@@ -81,7 +81,7 @@ void relay_lift_dir(enum lift_direction dir)
 /**
  * @brief	sets GPIO corresponding to DOUT3 where SPARE relay is connected
  * @param 	state	: boolean value for the output
- * @return	nothing
+ * @returns	nothing
  */
 void relay_spare_led(bool state)
 {

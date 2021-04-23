@@ -15,7 +15,7 @@
 
 /**
  * @brief	enables timer 0(Pole)/1(Arm) clock and resets it
- * @return	nothing
+ * @returns	nothing
  */
 void tmr_init(struct tmr *me)
 {
@@ -34,8 +34,8 @@ void tmr_init(struct tmr *me)
  * @brief	sets TIMER 0(Pole)/1(Arm) frequency
  * @param 	me				: pointer to tmr structure
  * @param 	tick_rate_hz 	: desired frequency
- * @return	0 on success
- * @return	-1 if tick_rate_hz > 300000
+ * @returns	0 on success
+ * @returns	-1 if tick_rate_hz > 300000
  *
  */
 int32_t tmr_set_freq(struct tmr *me, uint32_t tick_rate_hz)
@@ -61,7 +61,7 @@ int32_t tmr_set_freq(struct tmr *me, uint32_t tick_rate_hz)
 /**
  * @brief 	enables timer interrupt and starts it
  * @param 	me				: pointer to tmr structure
- * @return 	nothing
+ * @returns	nothing
  */
 void tmr_start(struct tmr *me)
 {
@@ -75,7 +75,7 @@ void tmr_start(struct tmr *me)
 /**
  * @brief 	disables timer interrupt and stops it
  * @param 	me				: pointer to tmr structure
- * @return 	nothing
+ * @returns	nothing
  */
 void tmr_stop(struct tmr *me)
 {
@@ -89,8 +89,8 @@ void tmr_stop(struct tmr *me)
 /**
  * @brief	returns if timer is started by querying if the interrupt is enabled
  * @param 	me				: pointer to tmr structure
- * @return  0 timer is not started.
- * @return  1 timer is started.
+ * @returns 0 timer is not started.
+ * @returns 1 timer is started.
  */
 uint32_t tmr_started(struct tmr *me)
 {
@@ -100,8 +100,8 @@ uint32_t tmr_started(struct tmr *me)
 /**
  * @brief	Determine if a match interrupt is pending
  * @param 	me				: pointer to tmr structure
- * @return  0 timer is not started.
- * @return  false if the interrupt is not pending, otherwise true
+ * @returns 0 timer is not started.
+ * @returns false if the interrupt is not pending, otherwise true
  * @note	Determine if the match interrupt for the passed timer and match
  * 			counter is pending. If the interrupt is pending clears the match counter
  */

@@ -22,7 +22,7 @@ static const uint32_t mot_pap_free_run_freqs[] = { 0, 25, 25, 25, 50, 75, 75,
  * @brief	corrects possible offsets of RDC alignment.
  * @param 	pos		: current RDC position
  * @param 	offset	: RDC value for 0 degrees
- * @return	the offset corrected position
+ * @returns	the offset corrected position
  */
 uint16_t mot_pap_offset_correction(uint16_t pos, uint16_t offset,
 		uint8_t resolution)
@@ -36,7 +36,7 @@ uint16_t mot_pap_offset_correction(uint16_t pos, uint16_t offset,
 /**
  * @brief	reads RDC position taking into account offset
  * @param 	me			: struct mot_pap pointer
- * @return 	nothing
+ * @returns	nothing
  */
 void mot_pap_read_corrected_pos(struct mot_pap *me)
 {
@@ -47,8 +47,8 @@ void mot_pap_read_corrected_pos(struct mot_pap *me)
 /**
  * @brief	returns the direction of movement depending if the error is positive or negative
  * @param 	error : the current position error in closed loop positioning
- * @return	MOT_PAP_DIRECTION_CW if error is positive
- * @return	MOT_PAP_DIRECTION_CCW if error is negative
+ * @returns	MOT_PAP_DIRECTION_CW if error is positive
+ * @returns	MOT_PAP_DIRECTION_CCW if error is negative
  */
 enum mot_pap_direction mot_pap_direction_calculate(int32_t error)
 {
@@ -58,7 +58,7 @@ enum mot_pap_direction mot_pap_direction_calculate(int32_t error)
 /**
  * @brief 	checks if the required FREE RUN speed is in the allowed range
  * @param 	speed : the requested speed
- * @return	true if speed is in the allowed range
+ * @returns	true if speed is in the allowed range
  */
 bool mot_pap_free_run_speed_ok(uint32_t speed)
 {
@@ -69,7 +69,7 @@ bool mot_pap_free_run_speed_ok(uint32_t speed)
 /**
  * @brief 	supervise motor movement for stall or position reached in closed loop
  * @param 	me			: struct mot_pap pointer
- * @return  nothing
+ * @returns nothing
  * @note	to be called by the deferred interrupt task handler
  */
 void mot_pap_supervise(struct mot_pap *me)
@@ -135,7 +135,7 @@ void mot_pap_supervise(struct mot_pap *me)
  * @param 	me			: struct mot_pap pointer
  * @param 	direction	: either MOT_PAP_DIRECTION_CW or MOT_PAP_DIRECTION_CCW
  * @param 	speed		: integer from 0 to 8
- * @return 	nothing
+ * @returns	nothing
  */
 void mot_pap_move_free_run(struct mot_pap *me, enum mot_pap_direction direction,
 		uint32_t speed)
@@ -164,7 +164,7 @@ void mot_pap_move_free_run(struct mot_pap *me, enum mot_pap_direction direction,
  * @brief	if allowed, starts a closed loop movement
  * @param 	me			: struct mot_pap pointer
  * @param 	setpoint	: the resolver value to reach
- * @return 	nothing
+ * @returns	nothing
  */
 void mot_pap_move_closed_loop(struct mot_pap *me, uint16_t setpoint)
 {
@@ -203,7 +203,7 @@ void mot_pap_move_closed_loop(struct mot_pap *me, uint16_t setpoint)
 /**
  * @brief	if there is a movement in process, stops it
  * @param 	me	: struct mot_pap pointer
- * @return 	nothing
+ * @returns	nothing
  */
 void mot_pap_stop(struct mot_pap *me)
 {

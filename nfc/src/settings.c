@@ -10,6 +10,10 @@
 /* Page used for storage */
 #define PAGE_ADDR       0x01/* Page number */
 
+/**
+ * @brief 	default hardcoded settings
+ * @returns	copy of settings structure
+ */
 static struct settings settings_defaults()
 {
 	struct settings settings;
@@ -22,6 +26,10 @@ static struct settings settings_defaults()
 	return settings;
 }
 
+/**
+ * @brief 	initializes EEPROM
+ * @returns	nothing
+ */
 void settings_init(struct settings settings)
 {
 	EEPROM_init();
@@ -29,7 +37,7 @@ void settings_init(struct settings settings)
 
 /**
  * @brief 	erases EEPROM page containing settings
- * @return	nothing
+ * @returns	nothing
  */
 void settings_erase(void)
 {
@@ -39,7 +47,7 @@ void settings_erase(void)
 
 /**
  * @brief 	saves settings to EEPROM
- * @return	nothing
+ * @returns	nothing
  */
 void settings_save(struct settings settings)
 {
@@ -51,6 +59,11 @@ void settings_save(struct settings settings)
 			(sizeof settings + 3) & ~0x03);
 }
 
+/**
+ * @brief 	reads settings from EEPROM. If no valid settings are found
+ * 			loads default hardcoded values
+ * @returns	copy of settings structure
+ */
 struct settings settings_read()
 {
 	struct settings settings;

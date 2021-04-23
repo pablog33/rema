@@ -19,7 +19,7 @@ static SemaphoreHandle_t spi_mutex;
  * @param 	xfers			: pointer to array of transfers Chip_SSP_DATA_SETUP_T
  * @param 	num_xfers		: transfers count
  * @param 	gpio_wr_fsync	: pointer to WR/FSYNC line function handler
- * @return	0 on success
+ * @returns	0 on success
  * @note 	this function takes a mutex to avoid interleaving transfers to both RDCs.
  * 			could work without mutex but debugging with a logic analyzer would be more confusing.
  */
@@ -54,7 +54,7 @@ int32_t spi_sync_transfer(Chip_SSP_DATA_SETUP_T *xfers, uint32_t num_xfers,
 
 /**
  * \brief 	initializes SSP bus to transfer SPI frames as a MASTER.
- * @return	noting
+ * @returns	noting
  * @note 	sets SPI bitrate to 1Mhz SEE IF WE CAN IMPROVE THAT.
  */
 void spi_init(void)

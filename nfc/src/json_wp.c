@@ -42,7 +42,7 @@
  * 			the outputs of the called commands to the response buffer.
  * @param 	*rx_buff 	:pointer to the received buffer from the network
  * @param   **tx_buff	:pointer to pointer, will be set to the allocated return buffer
- * @return	the length of the allocated response buffer
+ * @returns	the length of the allocated response buffer
  */
 int json_wp(char *rx_buff, char **tx_buff)
 {

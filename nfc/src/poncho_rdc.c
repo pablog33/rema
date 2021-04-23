@@ -5,12 +5,12 @@
 
 /**
  * @brief 	initializes GPIOs for Poncho RDC card
- * @return 	nothing
+ * @returns	nothing
  * @note	outputs are set to high
  */
 void poncho_rdc_init()
 {	/* GPa 201204 Des-soldar puente SB6 para des-asociar a PHY RESET. Soldar PHY RESET a RESET general en mismo puente de la CIAA */
-	Chip_SCU_PinMuxSet( 6, 1, SCU_MODE_FUNC0 );			//GPIO0	P6_1	PIN74	GPIO3[0]  RESET (SHARED)
+	Chip_SCU_PinMuxSet( 6, 1, SCU_MODE_FUNC0 );								//GPIO0	P6_1	PIN74	GPIO3[0]  RESET (SHARED)
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, 3, 0);
 	Chip_GPIO_SetPinOutHigh(LPC_GPIO_PORT, 3, 0);
 
@@ -47,7 +47,7 @@ void poncho_rdc_reset(bool state)
 /**
  * @brief	handles the SAMPLE line for the RDCs (shared)
  * @param 	state	: boolean value for the output
- * @return 	nothing
+ * @returns	nothing
  * @note	the chip copies the POS and VEL on the falling edge of the SAMPLE line
  */
 void poncho_rdc_sample(bool state)
@@ -62,7 +62,7 @@ void poncho_rdc_sample(bool state)
 /**
  * @brief	handles the WR/FSYNC line for the ARM RDC
  * @param 	state	: boolean value for the output
- * @return 	nothing
+ * @returns	nothing
  * @note	the falling edge of WR/FSYNC takes the SDI and SDO lines out of the high impedance state
  */
 void poncho_rdc_arm_wr_fsync(bool state)
@@ -77,7 +77,7 @@ void poncho_rdc_arm_wr_fsync(bool state)
 /**
  * @brief	handles the WR/FSYNC line for the POLE RDC
  * @param 	state	: boolean value for the output
- * @return 	nothing
+ * @returns	nothing
  * @note	the falling edge of WR/FSYNC takes the SDI and SDO lines out of the high impedance state
  */
 void poncho_rdc_pole_wr_fsync(bool state)
