@@ -25,6 +25,7 @@
 #include "pole.h"
 #include "arm.h"
 #include "temperature.h"
+#include "temperature_ds18b20.h"
 #include "poncho_rdc.h"
 #include "relay.h"
 #include "rtu_com_hmi.h"
@@ -50,14 +51,15 @@ static void prvSetupHardware(void)
 	Board_Init();
 	settings_init();
 	//settings_erase();
-	dout_init();
-	relay_init();
-	poncho_rdc_init();
+	//dout_init();
+	//relay_init();
+	//poncho_rdc_init();
 
-	arm_init();
-    pole_init();
-	lift_init();
-	temperature_init();
+	//arm_init();
+    //pole_init();
+	//lift_init();
+	//temperature_init();
+	temperature_ds18b20_init();
 
 	/* Utilizo el led spare para detectar conexión fisica del cable ethernet */
 	relay_spare_led(0); /* LOW */

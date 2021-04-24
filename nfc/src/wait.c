@@ -32,6 +32,7 @@ void wait_cycles(uint32_t cycles)
 {
 	uint32_t counter = cycles;
 
+	DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 	counter += DWT->CYCCNT;
 	while (DWT->CYCCNT < counter) {
 		/* wait */
