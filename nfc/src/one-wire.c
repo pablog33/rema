@@ -64,19 +64,25 @@ static uint8_t LastDeviceFlag;
 #define RC_SEARCH            0xF0
 #define RC_RELEASE           0xFF
 
-void DQ1_Init(void)
-{
-	Chip_SCU_PinMuxSet( 6, 1, SCU_MODE_FUNC4 | SCU_PINIO_FAST );	//GPIO1 P2_5 	PIN91	GPIO5[5]  SAMPLE (SHARED)
-	Chip_GPIO_SetPinDIRInput(LPC_GPIO_PORT, 5, 5);
-	Chip_GPIO_SetPinOutLow(LPC_GPIO_PORT, 5, 5);
-}
 
 #define DQ_Init               DQ1_Init()
-#define DQ_SetLow             Chip_GPIO_SetPinOutLow(LPC_GPIO_PORT, 5, 5)   	//DQ1_ClrVal()
-#define DQ_Low                Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, 5, 5) 	//DQ1_SetOutput()
-#define DQ_Floating           Chip_GPIO_SetPinDIRInput(LPC_GPIO_PORT, 5, 5) 	//DQ1_SetInput()
+#define DQ_SetLow             Chip_GPIO_SetPinOutLow(LPC_GPIO_PORT, 3, 0)   	//DQ1_ClrVal()
+#define DQ_Low                Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, 3, 0) 	//DQ1_SetOutput()
+#define DQ_Floating           Chip_GPIO_SetPinDIRInput(LPC_GPIO_PORT, 3, 0) 	//DQ1_SetInput()
+#define DQ_StrongPullUp		  DQ1_StrongPullUp()
+#define DQ_Read               (Chip_GPIO_GetPinState(LPC_GPIO_PORT, 3, 0)!=0)
 
-#define DQ_Read               (Chip_GPIO_GetPinState(LPC_GPIO_PORT, 5, 5)!=0)
+void DQ1_Init(void)
+{
+	Chip_SCU_PinMuxSet( 6, 1, SCU_MODE_FUNC0 | SCU_MODE_INACT | SCU_MODE_INBUFF_EN | SCU_PINIO_FAST);	//GPIO0	P6_1	PIN74	GPIO3[0]  RESET (SHARED)
+	Chip_GPIO_SetPinDIRInput(LPC_GPIO_PORT, 3, 0);
+	Chip_GPIO_SetPinOutLow(LPC_GPIO_PORT, 3, 0);
+}
+
+void DQ1_StrongPullUp() {
+	Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, 3, 0);
+	Chip_GPIO_SetPinOutHigh(LPC_GPIO_PORT, 3, 0);
+}
 
 #define INPUT_RING_BUFFER_SIZE	16		// Must be a power of 2 as required by ring_buffer.h impl
 RINGBUFF_T	*input_ring_buff;
@@ -277,6 +283,7 @@ uint8_t one_wire_calc_CRC(uint8_t *data, uint8_t dataSize)
  */
 void one_wire_init(void)
 {
+	DQ1_Init();
 	input_ring_buff = pvPortMalloc(sizeof(RINGBUFF_T));
 	RingBuffer_Init(input_ring_buff, ring_buffer_buffer, sizeof(uint8_t), INPUT_RING_BUFFER_SIZE );
 
@@ -573,4 +580,10 @@ bool one_wire_search(uint8_t *newAddr, bool search_mode)
 		}
 	}
 	return search_result;
+}
+
+void one_wire_strong_pull_up(uint32_t ms) {
+	DQ1_StrongPullUp();
+	vTaskDelay(pdMS_TO_TICKS(ms));
+	DQ1_Init();
 }

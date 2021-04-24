@@ -36,6 +36,7 @@ void wait_cycles(uint32_t cycles)
 	counter += DWT->CYCCNT;
 	while (DWT->CYCCNT < counter) {
 		/* wait */
+		__asm("");
 	}
 }
 

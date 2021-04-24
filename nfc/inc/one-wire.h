@@ -18,9 +18,6 @@ extern "C" {
 #define one_wire_ROM_CODE_SIZE   (8)
 /*!< Number of bytes for ROM code */
 
-#define one_wire_PARSE_COMMAND_ENABLED    one_wire_CONFIG_PARSE_COMMAND_ENABLED
-/*!< set to 1 if method ParseCommand() is present, 0 otherwise */
-
 uint8_t one_wire_count(void);
 
 uint8_t one_wire_receive(uint8_t counter);
@@ -50,6 +47,8 @@ void one_wire_reset_search(void);
 void one_wire_target_search(uint8_t familyCode);
 
 bool one_wire_search(uint8_t *newAddr, bool search_mode);
+
+void one_wire_strong_pull_up(uint32_t ms);
 
 #ifdef __cplusplus
 }  /* extern "C" */

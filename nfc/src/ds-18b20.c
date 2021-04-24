@@ -82,7 +82,7 @@ struct {
 } Device;
 
 /* @formatter:off */
-__attribute__((unused))						 /* conversion time based on resolution */
+											 /* conversion time based on resolution */
 static const uint16_t ConvTime[4] = { 	94,  /* DS18B20_RESOLUTION_BITS_9:  93.75 ms */
 										188, /* DS18B20_RESOLUTION_BITS_10: 187.5 ms */
 										375, /* DS18B20_RESOLUTION_BITS_11: 375 ms */
@@ -163,9 +163,10 @@ uint8_t ds18b20_start_conversion(uint8_t sensor_index)
 	one_wire_send_byte(RC_SKIP_ROM);
 	one_wire_send_byte(FC_CONVERT_T);
 #endif
+	one_wire_strong_pull_up(ConvTime[Sensor[sensor_index].resolution]);
 	Device.Busy = FALSE;
 #if DS18B20_CONFIG_READ_AUTO
-  McuWait_WaitOSms(ConvTime[Sensor[sensor_index].resolution]);
+  vTaskDelay(pdMS_TO_TICKS(ConvTime[Sensor[sensor_index].resolution]));
   res = ds18b20_read_temperature(sensor_index);
   if (res!=ERR_OK) {
     return res;
