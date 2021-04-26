@@ -1,0 +1,219 @@
+87d86
+< #include "common.h"
+114,116d112
+< #if( configUSE_MALLOC_DEBUG == 1 )
+<     uint32_t head_canary;                   /*<< Head Canary, TODO: Remove */
+< #endif
+119,121d114
+< #if( configUSE_MALLOC_DEBUG == 1 )
+<     TaskHandle_t *xOwner;                   /*<< Buffer owner, TODO: Remove */
+< #endif
+123,129d115
+< #if( configUSE_MALLOC_DEBUG == 1 )
+< #define HEAD_CANARY_PATTERN 0xABBA1234
+< #define TAIL_CANARY_PATTERN 0xBAAD5678
+< 
+< void vPortAddToList(uint32_t pointer);
+< uint8_t vPortRmFromList(uint32_t pointer);
+< #endif
+198,200d183
+< #if( configUSE_MALLOC_DEBUG == 1 )
+<                 xWantedSize += sizeof(uint32_t); // add size of tail_canary
+< #endif
+240,246d222
+< #if( configUSE_MALLOC_DEBUG == 1 )
+<                     /* Current task owener */
+<                     if (xTaskGetCurrentTaskHandle() && xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
+<                         pxPreviousBlock->pxNextFreeBlock->xOwner = xTaskGetCurrentTaskHandle();
+<                     }
+< #endif
+< 
+308,312d283
+< #if( configUSE_MALLOC_DEBUG == 1 )
+<     if (pvReturn != NULL) {
+<         vPortAddToList((uint32_t)pvReturn - xHeapStructSize);
+<     }
+< #endif
+365,368d335
+< #if( configUSE_MALLOC_DEBUG == 1 )
+<                     pxLink->xOwner = NULL;
+<                     vPortRmFromList((uint32_t)pxLink);
+< #endif
+371,373d337
+< #if( configUSE_MALLOC_DEBUG == 1 )
+<                 vPortUpdateFreeBlockList();
+< #endif
+464d427
+<         configASSERT(((uint32_t)pxIterator->pxNextFreeBlock & 0xFF000000) == 0x20000000);
+516,686d478
+< #if( configUSE_MALLOC_DEBUG == 1 )
+< // Additional functions to scan memory (buffer overflow, memory leaks)
+< 
+< BlockLink_t *allocList[256] = {0};
+< 
+< #define GET_BUFFER_ADDRESS(x) (uint32_t*)((uint32_t)x + xHeapStructSize)
+< #define HEAD_CANARY(x) (x->head_canary)
+< #define TAIL_CANARY(x) *(uint32_t*)((uint32_t)x + (x->xBlockSize & ~xBlockAllocatedBit) - 4)
+< 
+< void OPTIMIZE_FAST vPortAddToList(uint32_t pointer) {
+<     uint16_t pos = 0;
+<     BlockLink_t *temp = (BlockLink_t*)pointer;
+<     HEAD_CANARY(temp) = HEAD_CANARY_PATTERN;
+<     TAIL_CANARY(temp) = TAIL_CANARY_PATTERN;
+<     do {
+<         if (allocList[pos] == NULL) {
+<             allocList[pos] = (BlockLink_t*)pointer;
+<             break;
+<         }
+<     } while (allocList[pos++] != NULL && pos < (sizeof(allocList) / sizeof(uint32_t)));
+<     vPortUpdateFreeBlockList();
+< }
+< 
+< uint8_t OPTIMIZE_FAST vPortRmFromList(uint32_t pointer) {
+<     uint16_t pos;
+<     for (pos = 0; pos < (sizeof(allocList) / sizeof(uint32_t)); pos++) {
+<         if (allocList[pos] == (BlockLink_t*)pointer) {
+<             allocList[pos] = NULL;
+<             break;
+<         }
+<     }
+<     if (pos == (sizeof(allocList) / sizeof(uint32_t))) {
+<         return 0xFF;
+<     }
+<     for (; pos < (sizeof(allocList) / sizeof(uint32_t) - 1); pos++) {
+<         allocList[pos] = allocList[pos + 1];
+<     }
+<     return 0;
+< }
+< 
+< void OPTIMIZE_FAST vPortUpdateFreeBlockList(void) {
+<     BlockLink_t *start = &xStart;
+<     do {
+<         HEAD_CANARY(start) = HEAD_CANARY_PATTERN;
+<         start = start->pxNextFreeBlock;
+<     } while(start->pxNextFreeBlock != NULL);
+< }
+< 
+< void OPTIMIZE_FAST vPortCheckIntegrity(void) {
+<     //Scan free list
+<     BlockLink_t *start = &xStart;
+<     do {
+<         configASSERT(HEAD_CANARY(start) == HEAD_CANARY_PATTERN);
+<         start = start->pxNextFreeBlock;
+<     } while (start->pxNextFreeBlock != NULL);
+< 
+<     //Scan allocated list
+<     uint16_t pos = 0;
+<     do {
+<         if (HEAD_CANARY(allocList[pos]) != HEAD_CANARY_PATTERN) {
+<             printf("Detected buffer overflow\n");
+<             if (allocList[pos]->xOwner) {
+<                 TaskStatus_t status;
+<                 vTaskGetInfo(allocList[pos]->xOwner, &status, 0, 0);
+<                 uint32_t buffer_address = (uint32_t)allocList[pos] + xHeapStructSize;
+<                 uint32_t buffer_size = (uint32_t)allocList[pos]->xBlockSize & ~xBlockAllocatedBit;
+<                 printf("Task owner %s buffer address %lx size %lu\n", status.pcTaskName, buffer_address, buffer_size);
+<             }
+<         }
+<         configASSERT(HEAD_CANARY(allocList[pos]) == HEAD_CANARY_PATTERN);
+<         if (TAIL_CANARY(allocList[pos]) != TAIL_CANARY_PATTERN) {
+<             printf("Detected buffer overflow\n");
+<             if (allocList[pos]->xOwner) {
+<                 TaskStatus_t status;
+<                 vTaskGetInfo(allocList[pos]->xOwner, &status, 0, 0);
+<                 uint32_t buffer_address = (uint32_t)allocList[pos] + xHeapStructSize;
+<                 uint32_t buffer_size = (uint32_t)allocList[pos]->xBlockSize & ~xBlockAllocatedBit;
+<                 printf("Task owner %s buffer address %lx size %lu\n", status.pcTaskName, buffer_address, buffer_size);
+<             }
+<         }
+<         configASSERT(TAIL_CANARY(allocList[pos]) == TAIL_CANARY_PATTERN);
+<         pos++;
+<         if (allocList[pos] == NULL) {
+<             break;
+<         }
+<     } while (pos < (sizeof(allocList) / sizeof(BlockLink_t*)));
+< }
+< 
+< typedef struct {
+<     uint32_t *startAddress;
+<     uint32_t size;
+< } tMemoryRegion;
+< 
+< tMemoryRegion ram[2] = {
+<         {(uint32_t*)0x20000000, 0x18000},
+<         {(uint32_t*)0x10000000, 0x7FD0}
+< };
+< 
+< static inline uint8_t isCurrentStackAddress(TaskHandle_t task, uint32_t *x) {
+<     TaskStatus_t status;
+<     vTaskGetInfo(task, &status, 0, 0);
+<     uint32_t *startHeap = status.pxStackBase;
+<     uint32_t *endHeap = task;
+<     if (x > startHeap && x < endHeap) {
+<         return 1;
+<     }
+<     return 0;
+< }
+< 
+< uint32_t OPTIMIZE_FAST vPortMemoryScan(void) {
+<     uint16_t pos = 0;
+<     uint32_t orphaned_buffers = 0;
+<     // Cycle through pointer array until null pointer is found
+<     while (allocList[pos] != NULL) {
+<         // Get address of allocated buffer that will be referenced in the memory
+<         uint32_t allocatedAddress = xHeapStructSize + (uint32_t)allocList[pos];
+<         // Get buffer owner
+<         TaskHandle_t xTask = (TaskHandle_t)allocList[pos]->xOwner;
+<         uint8_t found = 0;
+<         // Only check if there is buffer owner
+<         if (xTask != NULL) {
+<             // Get task info
+<             TaskStatus_t status;
+<             vTaskGetInfo(xTask, &status, 0, 0);
+<             // Calculate start address
+<             uint32_t *startAddress = status.pxStackBase;
+<             // Calculate end address
+<             uint32_t *endAddress = (uint32_t*)((uint32_t)xTask - xHeapStructSize);
+<             // Scan memory
+<             while (startAddress <= endAddress) {
+<                 // Check if we have reference pointers
+<                 if (*startAddress == allocatedAddress) {
+<                     // Break search
+<                     found = 1;
+<                     break;
+<                 }
+<                 // Increase address by 4
+<                 startAddress += 4;
+<             }
+<             // Scan defined memory regions if we still don't have reference
+<             if (!found) {
+<                 // Scan other mem region
+<                 for (int i = 0; i < 2; i++) {
+<                     // Calculate start address
+<                     startAddress = ram[i].startAddress;
+<                     // Calculate end address
+<                     endAddress = (uint32_t*)((uint32_t)ram[i].startAddress | ram[i].size);
+<                     // Scan memory
+<                     while (startAddress < endAddress) {
+<                         // Check if we have reference pointers
+<                         if ((*startAddress == allocatedAddress) && (isCurrentStackAddress(xTaskGetCurrentTaskHandle(), startAddress) == 0)) {
+<                             found = 1;
+<                             break;
+<                         }
+<                         startAddress++;
+<                     }
+<                     if (found) break;
+<                 }
+<                 if (!found) {
+<                     // Didn't found any references to a pointer
+<                     orphaned_buffers++;
+<                     printf("Didn't found reference to buffer %lx (size %d) in task %s\n",
+<                             allocatedAddress, allocList[pos]->xBlockSize - xBlockAllocatedBit, status.pcTaskName);
+<                 }
+<             }
+<         }
+<         pos++;
+<     }
+<     return orphaned_buffers;
+< }
+< #endif

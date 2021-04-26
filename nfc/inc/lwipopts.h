@@ -126,7 +126,7 @@
 #define DEFAULT_UDP_RECVMBOX_SIZE       6
 
 /* TCPIP thread must run at higher priority than MAC threads! */
-#define TCPIP_THREAD_PRIO               (DEFAULT_THREAD_PRIO + configMAX_PRIORITIES - 2)
+#define TCPIP_THREAD_PRIO               (configMAX_PRIORITIES)
 
 #define TCPIP_THREAD_STACKSIZE          (512)
 
@@ -137,6 +137,7 @@
 
 /* Needed for malloc/free */
 #include "FreeRTOS.h"
+
 #define malloc pvPortMalloc
 #define free vPortFree
 

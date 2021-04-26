@@ -42,6 +42,8 @@
  *  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <string.h>
+
 #include "board.h"
 
 #include "one-wire.h"
@@ -85,7 +87,7 @@ void DQ1_StrongPullUp() {
 }
 
 #define INPUT_RING_BUFFER_SIZE	16		// Must be a power of 2 as required by ring_buffer.h impl
-RINGBUFF_T	*input_ring_buff;
+RINGBUFF_T	input_ring_buff;
 
 uint8_t ring_buffer_buffer[INPUT_RING_BUFFER_SIZE];
 
@@ -204,7 +206,7 @@ uint8_t one_wire_receive(uint8_t counter)
 			}
 			mask <<= 1; /* next bit */
 		} /* for */
-		(void) RingBuffer_Insert(input_ring_buff ,&val); /* put it into the queue so it can be retrieved by GetBytes() */
+		(void) RingBuffer_Insert(&input_ring_buff ,&val); /* put it into the queue so it can be retrieved by GetBytes() */
 		counter--;
 	}
 	return ERR_OK;
@@ -216,7 +218,7 @@ uint8_t one_wire_receive(uint8_t counter)
  */
 uint8_t one_wire_count(void)
 {
-	return RingBuffer_GetCount(input_ring_buff);
+	return RingBuffer_GetCount(&input_ring_buff);
 }
 
 /**
@@ -226,10 +228,10 @@ uint8_t one_wire_count(void)
  */
 uint8_t one_wire_get_byte(uint8_t *data)
 {
-	if (RingBuffer_GetCount(input_ring_buff) == 0) {
+	if (RingBuffer_GetCount(&input_ring_buff) == 0) {
 		return ERR_FAILED;
 	}
-	(void) RingBuffer_Pop(input_ring_buff, data);
+	(void) RingBuffer_Pop(&input_ring_buff, data);
 	return ERR_OK;
 }
 
@@ -241,11 +243,11 @@ uint8_t one_wire_get_byte(uint8_t *data)
  */
 uint8_t one_wire_get_bytes(uint8_t *data, uint8_t count)
 {
-	if (count > RingBuffer_GetCount(input_ring_buff)) {
+	if (count > RingBuffer_GetCount(&input_ring_buff)) {
 		return ERR_FAILED;
 	}
 	for (; count > 0; count--) {
-		(void) RingBuffer_Pop(input_ring_buff, data);
+		(void) RingBuffer_Pop(&input_ring_buff, data);
 		data++;
 	}
 	return ERR_OK;
@@ -284,22 +286,11 @@ uint8_t one_wire_calc_CRC(uint8_t *data, uint8_t dataSize)
 void one_wire_init(void)
 {
 	DQ1_Init();
-	input_ring_buff = pvPortMalloc(sizeof(RINGBUFF_T));
-	RingBuffer_Init(input_ring_buff, ring_buffer_buffer, sizeof(uint8_t), INPUT_RING_BUFFER_SIZE );
+	RingBuffer_Init(&input_ring_buff, ring_buffer_buffer, sizeof(uint8_t), INPUT_RING_BUFFER_SIZE );
 
 	DQ_Floating; /* input mode, let the pull-up take the signal high */
 	/* load LOW to output register. We won't change that value afterwards, we only switch between output and input/float mode */
 	DQ_SetLow;
-}
-
-/**
- * @brief   driver de-initialization
- * @returns nothing
- */
-void one_wire_deinit(void)
-{
-	DQ_Floating; /* input mode, tristate pin */
-	vPortFree(input_ring_buff);
 }
 
 /**
@@ -313,10 +304,10 @@ uint8_t one_wire_read_rom_code(uint8_t *romCodeBuffer)
 
 	one_wire_send_reset();
 	one_wire_send_byte(RC_READ_ROM);
-	one_wire_receive(one_wire_ROM_CODE_SIZE); /* 8 bytes for the ROM code */
+	one_wire_receive(ONE_WIRE_ROM_CODE_SIZE); /* 8 bytes for the ROM code */
 	one_wire_send_byte(RC_RELEASE);
 	/* copy ROM code */
-	res = one_wire_get_bytes(romCodeBuffer, one_wire_ROM_CODE_SIZE); /* 8 bytes */
+	res = one_wire_get_bytes(romCodeBuffer, ONE_WIRE_ROM_CODE_SIZE); /* 8 bytes */
 	if (res != ERR_OK) {
 		return res; /* error */
 	}
@@ -324,8 +315,8 @@ uint8_t one_wire_read_rom_code(uint8_t *romCodeBuffer)
 	 index 1-6: 48bit serial number
 	 index 7  : CRC
 	 */
-	if (one_wire_calc_CRC(&romCodeBuffer[0], one_wire_ROM_CODE_SIZE - 1)
-			!= romCodeBuffer[one_wire_ROM_CODE_SIZE - 1]) {
+	if (one_wire_calc_CRC(&romCodeBuffer[0], ONE_WIRE_ROM_CODE_SIZE - 1)
+			!= romCodeBuffer[ONE_WIRE_ROM_CODE_SIZE - 1]) {
 		return ERR_CRC; /* wrong CRC? */
 	}
 	return ERR_OK; /* ok */
@@ -339,7 +330,7 @@ uint8_t one_wire_read_rom_code(uint8_t *romCodeBuffer)
  * @param	ch      : character to append
  * @returns nothing
  */
-void utility_chcat(uint8_t *dst, size_t dstSize, uint8_t ch)
+void chcat(uint8_t *dst, size_t dstSize, uint8_t ch)
 {
 	dstSize--; /* for zero byte */
 	/* point to the end of the source */
@@ -356,32 +347,6 @@ void utility_chcat(uint8_t *dst, size_t dstSize, uint8_t ch)
 }
 
 /**
- * @brief  	same as normal strcat, but safe as it does not write beyond
- *         	the buffer. Always terminates the result string.
- * @param  	*dst     : pointer to destination string
- * @param  	dstSize	: size of the destination buffer (in bytes) including the zero byte
- * @param   *src    : pointer to source string.
- * @returns nothing
- */
-
-void utility_strcat(uint8_t *dst, size_t dstSize, const unsigned char *src)
-{
-	dstSize--; /* for zero byte */
-	/* point to the end of the source */
-	while (dstSize > 0 && *dst != '\0') {
-		dst++;
-		dstSize--;
-	}
-	/* copy the src in the destination */
-	while (dstSize > 0 && *src != '\0') {
-		*dst++ = *src++;
-		dstSize--;
-	}
-	/* terminate the string */
-	*dst = '\0';
-}
-
-/**
  * @brief 	appends a 8bit unsigned value to a string buffer as hex
  *        	number (without a 0x prefix).
  * @param 	*dst    : pointer to destination string
@@ -389,7 +354,7 @@ void utility_strcat(uint8_t *dst, size_t dstSize, const unsigned char *src)
  * @param   num     : value to convert.
  * @returns nothing
  */
-void utility_strcat_num_8_hex(uint8_t *dst, size_t dstSize, uint8_t num)
+void strcat_num_8_hex(uint8_t *dst, size_t dstSize, uint8_t num)
 {
 	unsigned char buf[sizeof("FF")]; /* maximum buffer size we need */
 	unsigned char hex;
@@ -399,7 +364,7 @@ void utility_strcat_num_8_hex(uint8_t *dst, size_t dstSize, uint8_t num)
 	buf[1] = (char) (hex + ((hex <= 9) ? '0' : ('A' - 10)));
 	hex = (char) ((num >> 4) & 0x0F);
 	buf[0] = (char) (hex + ((hex <= 9) ? '0' : ('A' - 10)));
-	utility_strcat(dst, dstSize, buf);
+	strncat((char *) dst, (char *) buf, dstSize);
 }
 
 /**
@@ -413,10 +378,10 @@ uint8_t one_wire_strcat_rom_code(uint8_t *buf, size_t bufSize, uint8_t *romCode)
 {
 	int j;
 
-	for (j = 0; j < one_wire_ROM_CODE_SIZE; j++) {
-		utility_strcat_num_8_hex(buf, bufSize, romCode[j]);
-		if (j < one_wire_ROM_CODE_SIZE - 1) {
-			utility_chcat(buf, bufSize, '-');
+	for (j = 0; j < ONE_WIRE_ROM_CODE_SIZE; j++) {
+		strcat_num_8_hex(buf, bufSize, romCode[j]);
+		if (j < ONE_WIRE_ROM_CODE_SIZE - 1) {
+			chcat(buf, bufSize, '-');
 		}
 	}
 	return ERR_OK;

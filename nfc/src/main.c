@@ -30,6 +30,7 @@
 #include "settings.h"
 #include "lwip/ip_addr.h"
 #include "tcp_server.h"
+#include "mem_check.h"
 
 /* GPa 201117 1850 Iss2: agregado de Heap_4.c*/
 uint8_t __attribute__((section ("." "data" ".$" "RamLoc40"))) ucHeap[configTOTAL_HEAP_SIZE];
@@ -44,7 +45,9 @@ static void prvSetupHardware(void)
 	Board_SystemInit();
 	SystemCoreClockUpdate();
 
+	// Without the following command the use of DWT makes debugging impossible
 	CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+	// Enable Cycle Counter, used to create precision delays in wait.c
 	DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 
 	debugInit();
@@ -54,13 +57,15 @@ static void prvSetupHardware(void)
 	//settings_erase();
 	//dout_init();
 	//relay_init();
-	//poncho_rdc_init();
+	poncho_rdc_init();
 
-	//arm_init();
+	arm_init();
 	//pole_init();
 	//lift_init();
 	//temperature_init();
-	temperature_ds18b20_init();
+	//temperature_ds18b20_init();
+	//mem_check_init();
+
 
 	/* Utilizo el led spare para detectar conexión fisica del cable ethernet */
 	relay_spare_led(0); /* LOW */
@@ -182,4 +187,6 @@ void prvGetRegistersFromStack(uint32_t *pulFaultStackAddress)
 	for (;;)
 		;
 }
+
+
 

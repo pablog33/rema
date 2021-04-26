@@ -88,7 +88,7 @@ void lift_init()
 	lift.upLimit = false;
 	lift.downLimit = false;
 
-	xTaskCreate(lift_task, "Lift", configMINIMAL_STACK_SIZE*2, NULL,
+	xTaskCreate(lift_task, "Lift", configMINIMAL_STACK_SIZE * 2, NULL,
 	LIFT_TASK_PRIORITY, NULL);
 	lDebug(Info, "lift: task created");
 }

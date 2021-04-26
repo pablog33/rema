@@ -48,7 +48,6 @@
 #include "lwip/init.h"
 #include "netif/etharp.h"
 #include "netif/ppp_oe.h"
-#include <debug.h>
 
 /* global variables */
 static tcpip_init_done_fn tcpip_init_done;
@@ -468,9 +467,8 @@ tcpip_init(tcpip_init_done_fn initfunc, void *arg)
   }
 #endif /* LWIP_TCPIP_CORE_LOCKING */
 
-// sys_thread_new(TCPIP_THREAD_NAME, tcpip_thread, NULL, TCPIP_THREAD_STACKSIZE, TCPIP_THREAD_PRIO + 1);
-  sys_thread_new(TCPIP_THREAD_NAME, tcpip_thread, NULL, TCPIP_THREAD_STACKSIZE, 8);
-  lDebug(Info, "TCPIP PRIO: %d", 8);
+  sys_thread_new(TCPIP_THREAD_NAME, tcpip_thread, NULL, TCPIP_THREAD_STACKSIZE, TCPIP_THREAD_PRIO + 1);
+  LWIP_DEBUGF(TCPIP_DEBUG, ("tcpip_thread: PRIORITY %p\n", TCPIP_THREAD_PRIO + 1));
 }
 
 /**

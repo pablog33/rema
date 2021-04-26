@@ -24,10 +24,15 @@
 #define configTICK_RATE_HZ			( ( TickType_t ) 1000 )
 #define configMINIMAL_STACK_SIZE	( ( uint16_t ) 128 )
 #ifdef __CODE_RED
-#define configTOTAL_HEAP_SIZE		( ( size_t ) ( 48*1024 ) ) /* GPa 201118 1610 Estaba en 32*1024 */
+#define configTOTAL_HEAP_SIZE		( ( size_t ) ( 40*1024 ) ) /* GPa 201118 1610 Estaba en 32*1024 */
 #else
 #define configTOTAL_HEAP_SIZE		( ( size_t ) ( 0 ) )
 #endif
+
+#define configAPPLICATION_ALLOCATED_HEAP	1
+
+#define configUSE_MALLOC_DEBUG		1
+
 #define configMAX_TASK_NAME_LEN		( 20 )
 #define configUSE_TRACE_FACILITY	1
 #define configUSE_16_BIT_TICKS		0

@@ -6,8 +6,11 @@
 #include "ds18b20.h"
 #include "temperature_ds18b20.h"
 
+#define STB_DEFINE
 
-#define TEMP_DS18B20_TASK_PRIORITY ( configMAX_PRIORITIES - 1 )
+#include "misc.h"
+
+#define TEMPERATURE_DS18B20_TASK_PRIORITY ( configMAX_PRIORITIES - 4 )
 
 
 static void temperature_ds18b20_task(void *par)
@@ -15,7 +18,7 @@ static void temperature_ds18b20_task(void *par)
 	while (true) {
 		temperature_ds18b20_read();
 
-		vTaskDelay(pdMS_TO_TICKS(2000));
+		vTaskDelay(pdMS_TO_TICKS(1000));
 	}
 }
 
@@ -29,20 +32,9 @@ void temperature_ds18b20_init()
 	ds18b20_init();
 	lDebug(Info, "search_And_assign_ROM: %i", ds18b20_search_and_assign_ROM_codes());
 	//lDebug(Info, "read_ROM: %i", ds18b20_read_ROM(0));
-	xTaskCreate(temperature_ds18b20_task, "DS18B20", configMINIMAL_STACK_SIZE, NULL,
-			TEMP_DS18B20_TASK_PRIORITY, NULL);
+	xTaskCreate(temperature_ds18b20_task, "DS18B20", configMINIMAL_STACK_SIZE * 2, NULL,
+			TEMPERATURE_DS18B20_TASK_PRIORITY, NULL);
 	lDebug(Info, "DS18B20: task created");
-}
-
-void printDouble(double v, int decimalDigits)
-{
-  int i = 1;
-  int intPart, fractPart;
-  for (;decimalDigits!=0; i*=10, decimalDigits--);
-  intPart = (int)v;
-  fractPart = (int)((v-(double)(int)v)*i);
-  if(fractPart < 0) fractPart *= -1;
-  printf("%i.%i", intPart, fractPart);
 }
 
 /**
@@ -51,16 +43,16 @@ void printDouble(double v, int decimalDigits)
  */
 float temperature_ds18b20_read(void)
 {
-	float temp;
+	float temperature;
 
 	lDebug(Info, "start_conversion: %i", ds18b20_start_conversion(0));
 	lDebug(Info, "read_temperature: %i", ds18b20_read_temperature(0));
-	lDebug(Info, "get_tempeature_float: %i", ds18b20_get_temperature_float(0, &temp));
+	lDebug(Info, "get_tempeature_float: %i", ds18b20_get_temperature_float(0, &temperature));
 
-	printDouble((double) temp, 3);
-	//lDebug(Info, "Temperatura leida del DS18B20: %6.3f", (double)temp);
+	char buff[6];
+	snprint_double(buff, sizeof buff / sizeof buff[0], temperature, 2);
+	lDebug(Info, "Temperatura leida del DS18B20: %s", buff);
 
-
-	return temp;
+	return temperature;
 
 }

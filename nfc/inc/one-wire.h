@@ -14,8 +14,9 @@ extern "C" {
 #define ERR_OK                          0x00U /*!< OK */
 #define ERR_BUSOFF                      0x0CU /*!< Bus not available. */
 #define ERR_CRC                         0x14U /*!< CRC error is detected. */
+#define ERR_RANGE                       0x02U /*!< Parameter out of range. */
 
-#define one_wire_ROM_CODE_SIZE   (8)
+#define ONE_WIRE_ROM_CODE_SIZE   (8)
 /*!< Number of bytes for ROM code */
 
 uint8_t one_wire_count(void);
