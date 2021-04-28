@@ -9,6 +9,7 @@
 #include "parson.h"
 #include "json_wp.h"
 #include "settings.h"
+#include "temperature_ds18b20.h"
 
 #define PROTOCOL_VERSION  	"JSON_1.0"
 
@@ -164,6 +165,23 @@ JSON_Value* network_settings_cmd(JSON_Value const *pars)
 	return NULL;
 }
 
+JSON_Value* mem_info_cmd(JSON_Value const *pars)
+{
+	JSON_Value *ans = json_value_init_object();
+	json_object_set_number(json_value_get_object(ans), "MEM_TOTAL", configTOTAL_HEAP_SIZE);
+	json_object_set_number(json_value_get_object(ans), "MEM_FREE", xPortGetFreeHeapSize());
+	json_object_set_number(json_value_get_object(ans), "MEM_MIN_FREE", xPortGetMinimumEverFreeHeapSize());
+	return ans;
+}
+
+JSON_Value* temperature_info_cmd(JSON_Value const *pars)
+{
+	JSON_Value *ans = json_value_init_object();
+	json_object_set_number(json_value_get_object(ans), "TEMP1", (double) temperature_ds18b20_get());
+	return ans;
+}
+
+
 // @formatter:off
 const cmd_entry cmds_table[] = {
 		{
@@ -198,7 +216,14 @@ const cmd_entry cmds_table[] = {
 				"NETWORK_SETTINGS",
 				network_settings_cmd,
 		},
-
+		{
+				"MEM_INFO",
+				mem_info_cmd,
+		},
+		{
+				"TEMPERATURE_INFO",
+				temperature_info_cmd,
+		},
 };
 // @formatter:on
 /**
@@ -216,7 +241,7 @@ JSON_Value* cmd_execute(char const *cmd, JSON_Value const *pars)
 		}
 	}
 	if (!cmd_found) {
-		lDebug(Info, "No matching command found");
+		lDebug(Error, "No matching command found");
 	}
 	return NULL;
 }

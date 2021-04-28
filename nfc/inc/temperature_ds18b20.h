@@ -5,7 +5,7 @@
 
 void temperature_ds18b20_init();
 
-float temperature_ds18b20_read(void);
+float temperature_ds18b20_get();
 
 #ifdef __cplusplus
 }

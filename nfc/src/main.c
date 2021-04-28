@@ -63,8 +63,8 @@ static void prvSetupHardware(void)
 	//pole_init();
 	//lift_init();
 	//temperature_init();
-	//temperature_ds18b20_init();
-	//mem_check_init();
+	temperature_ds18b20_init();
+	mem_check_init();
 
 
 	/* Utilizo el led spare para detectar conexión fisica del cable ethernet */

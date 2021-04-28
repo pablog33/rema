@@ -103,7 +103,7 @@ void debugToFile(const char *fileName);
 void debugClose(void);
 
 #ifdef DEBUG
-#define DEBUG_ENABLED 1  // debug code available at runtime
+#define DEBUG_ENABLED 0  // debug code available at runtime
 #else
 /**
  * This macro controls whether all debugging code is optimized out of the

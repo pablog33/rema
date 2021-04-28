@@ -279,7 +279,7 @@ uint32_t OPTIMIZE_FAST vPortMemoryScan(void) {
             // Scan defined memory regions if we still don't have reference
             if (!found) {
                 // Scan other mem region
-                for (int i = 0; i < 2; i++) {
+                for (int i = 0; i < (sizeof ram_regions / sizeof ram_regions[0]); i++) {
                     // Calculate start address
                     startAddress = ram_regions[i].startAddress;
                     // Calculate end address
@@ -298,7 +298,7 @@ uint32_t OPTIMIZE_FAST vPortMemoryScan(void) {
                 if (!found) {
                     // Didn't found any references to a pointer
                     orphaned_buffers++;
-                    printf("Didn't found reference to buffer %lx (size %d) in task %s\n",
+                    printf("Didn't find reference to buffer %lx (size %d) in task %s\n",
                             allocatedAddress, allocList[pos]->xBlockSize - xBlockAllocatedBit, status.pcTaskName);
                 }
             }
