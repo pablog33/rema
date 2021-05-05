@@ -5,7 +5,7 @@
 
 void temperature_ds18b20_init();
 
-float temperature_ds18b20_get();
+uint32_t temperature_ds18b20_get(uint8_t sensor, float *var);
 
 #ifdef __cplusplus
 }

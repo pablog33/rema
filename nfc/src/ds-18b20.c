@@ -40,8 +40,8 @@
 
 #define DS18B20_CONFIG_READ_AUTO				(false)
 #define DS18B20_CONFIG_PARASITIC_POWER			(true)
-#define DS18B20_CONFIG_MULTIPLE_BUS_DEVICES		(false)
-#define DS18B20_CONFIG_NUMBER_OF_SENSORS		(1)
+#define DS18B20_CONFIG_MULTIPLE_BUS_DEVICES		(true)
+#define DS18B20_CONFIG_NUMBER_OF_SENSORS		(2)
 
 /* Events */
 enum {
@@ -353,7 +353,6 @@ void ds18b20_init(void)
  *	        the list of available sensors
  * @returns error code
  */
-uint8_t ds18b20_search_and_assign_ROM_codes(void)
 {
 	uint8_t rom[ONE_WIRE_ROM_CODE_SIZE];
 	bool found;
