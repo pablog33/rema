@@ -63,6 +63,7 @@ static void pole_task(void *par)
 			}
 
 			vPortFree(msg_rcv);
+			msg_rcv = NULL;
 		}
 	}
 }

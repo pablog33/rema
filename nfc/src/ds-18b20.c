@@ -66,11 +66,12 @@ enum {
 
 #define DS18B20_NOF_SCRATCHPAD_BYTES  (9) /* number of bytes in scratchpad */
 
+static bool one_wire_bus_busy = FALSE;
+
 typedef struct {
 	int32_t Temperature;
 	uint8_t Rom[DS18B20_ROM_CODE_SIZE]; /* family code (0x28), ROM code (6 bytes), CRC (1 byte) */
 	DS18B20_ResolutionBits resolution; /* DS18B20_ResolutionBits */
-	unsigned Busy :1;
 } Sensor_t;
 
 /* @formatter:off */
@@ -89,7 +90,7 @@ static uint8_t ds18b20_read_scratchpad(uint8_t sensor_index,
 {
 	uint8_t res;
 
-	if (Sensor[sensor_index].Busy) {
+	if (one_wire_bus_busy) {
 		return ERR_BUSY;
 	}
 
@@ -97,7 +98,7 @@ static uint8_t ds18b20_read_scratchpad(uint8_t sensor_index,
 		return ERR_RANGE; /* error */
 	}
 
-	Sensor[sensor_index].Busy = TRUE;
+	one_wire_bus_busy = TRUE;
 	one_wire_send_reset();
 #if DS18B20_CONFIG_MULTIPLE_BUS_DEVICES
 	one_wire_send_byte(RC_MATCH_ROM);
@@ -109,7 +110,7 @@ static uint8_t ds18b20_read_scratchpad(uint8_t sensor_index,
 	one_wire_send_byte(FC_READ_SCRATCHPAD);
 	one_wire_receive(DS18B20_NOF_SCRATCHPAD_BYTES);
 	one_wire_send_byte(0xFF);
-	Sensor[sensor_index].Busy = FALSE;
+	one_wire_bus_busy = FALSE;
 
 	/* extract data */
 	res = one_wire_get_bytes(&data[0], DS18B20_NOF_SCRATCHPAD_BYTES); /* scratchpad with 9 bytes */
@@ -131,7 +132,7 @@ static uint8_t ds18b20_read_scratchpad(uint8_t sensor_index,
  */
 uint8_t ds18b20_start_conversion(uint8_t sensor_index)
 {
-	if (Sensor[sensor_index].Busy) {
+	if (one_wire_bus_busy) {
 		return ERR_BUSY;
 	}
 
@@ -139,7 +140,7 @@ uint8_t ds18b20_start_conversion(uint8_t sensor_index)
 		return ERR_RANGE; /* error */
 	}
 
-	Sensor[sensor_index].Busy = TRUE;
+	one_wire_bus_busy = TRUE;
 	one_wire_send_reset();
 #if DS18B20_CONFIG_MULTIPLE_BUS_DEVICES
 	one_wire_send_byte(RC_MATCH_ROM);
@@ -154,7 +155,7 @@ uint8_t ds18b20_start_conversion(uint8_t sensor_index)
 #if DS18B20_CONFIG_READ_AUTO && !DS18B20_CONFIG_PARASITIC_POWER
 	vTaskDelay(pdMsToTicks(ConvTime[Sensor[sensor_index].resolution]));
 #endif
-	Sensor[sensor_index].Busy = FALSE;
+	one_wire_bus_busy = FALSE;
 #if DS18B20_CONFIG_READ_AUTO
 	return ds18b20_read_temperature(sensor_index);
 #endif
@@ -177,7 +178,7 @@ uint8_t ds18b20_set_resolution(uint8_t sensor_index,
 {
 	uint8_t config;
 
-	if (Sensor[sensor_index].Busy) {
+	if (one_wire_bus_busy) {
 		return ERR_BUSY;
 	}
 
@@ -187,7 +188,7 @@ uint8_t ds18b20_set_resolution(uint8_t sensor_index,
 	Sensor[sensor_index].resolution = resolution;
 	config = (((uint8_t) (resolution << DS18B20_CONFIG_SHIFT_R0))
 			| DS18B20_CONFIG_ONE_MASK); /* build proper configuration register mask */
-	Sensor[sensor_index].Busy = TRUE;
+	one_wire_bus_busy = TRUE;
 	one_wire_send_reset();
 #if DS18B20_CONFIG_MULTIPLE_BUS_DEVICES
 	one_wire_send_byte(RC_MATCH_ROM);
@@ -199,7 +200,7 @@ uint8_t ds18b20_set_resolution(uint8_t sensor_index,
 	one_wire_send_byte(0x01);
 	one_wire_send_byte(0x10);
 	one_wire_send_byte(config);
-	Sensor[sensor_index].Busy = FALSE;
+	one_wire_bus_busy = FALSE;
 	return ERR_OK;
 }
 
@@ -315,13 +316,13 @@ uint8_t ds18b20_read_ROM(uint8_t sensor_index)
 		return ERR_RANGE; /* error */
 	}
 
-	if (Sensor[sensor_index].Busy) {
+	if (one_wire_bus_busy) {
 		return ERR_BUSY;
 	}
 
-	Sensor[sensor_index].Busy = TRUE;
+	one_wire_bus_busy = TRUE;
 	res = one_wire_read_rom_code(Sensor[sensor_index].Rom);
-	Sensor[sensor_index].Busy = FALSE;
+	one_wire_bus_busy = FALSE;
 	/* index 0  : family code
 	 index 1-6: 48bit serial number
 	 index 7  : CRC
@@ -353,6 +354,7 @@ void ds18b20_init(void)
  *	        the list of available sensors
  * @returns error code
  */
+uint8_t ds18b20_search_and_assign_ROM_codes(void)
 {
 	uint8_t rom[ONE_WIRE_ROM_CODE_SIZE];
 	bool found;

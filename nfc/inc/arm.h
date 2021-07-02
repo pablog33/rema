@@ -28,4 +28,3 @@ JSON_Value *arm_json(void);
 #endif
 
 #endif /* ARM_H_ */
-;

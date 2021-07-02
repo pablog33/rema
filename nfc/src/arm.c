@@ -62,6 +62,7 @@ static void arm_task(void *par)
 			}
 
 			vPortFree(msg_rcv);
+			msg_rcv = NULL;
 		}
 	}
 }

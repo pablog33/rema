@@ -103,7 +103,7 @@ void debugToFile(const char *fileName);
 void debugClose(void);
 
 #ifdef DEBUG
-#define DEBUG_ENABLED 0  // debug code available at runtime
+#define DEBUG_ENABLED 1  // debug code available at runtime
 #else
 /**
  * This macro controls whether all debugging code is optimized out of the
@@ -187,6 +187,7 @@ do { \
 				levelText(level), __FILE__, __LINE__, __func__, ##__VA_ARGS__); \
 			if (xQueueSend(debug_queue, &dbg_msg, (TickType_t) 0) != pdPASS) { \
 				vPortFree(dbg_msg); \
+				dbg_msg = NULL; \
 			} \
 	   } \
 } while(0)

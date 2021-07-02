@@ -26,7 +26,7 @@
 #include "temperature_ds18b20.h"
 #include "poncho_rdc.h"
 #include "relay.h"
-#include "rtu_com_hmi.h"
+#include "lwip_init.h"
 #include "settings.h"
 #include "lwip/ip_addr.h"
 #include "tcp_server.h"

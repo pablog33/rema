@@ -28,4 +28,3 @@ JSON_Value *pole_json(void);
 #endif
 
 #endif /* POLE_H_ */
-;

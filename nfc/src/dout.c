@@ -1,7 +1,7 @@
 #include <stdbool.h>
 
 #include "board.h"
-
+#include "dout.h"
 #include "mot_pap.h"
 
 /**

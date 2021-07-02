@@ -24,8 +24,6 @@ void settings_save(struct settings settings);
 
 struct settings settings_read();
 
-void settings_save();
-
 #ifdef __cplusplus
 }
 #endif

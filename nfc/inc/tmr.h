@@ -14,8 +14,8 @@ struct tmr {
 	bool 		started;
 	LPC_TIMER_T *lpc_timer;
 	uint32_t	rgu_timer_rst;
-	uint32_t	clk_mx_timer;
-	uint32_t	timer_IRQn;
+	CHIP_CCU_CLK_T clk_mx_timer;
+	IRQn_Type timer_IRQn;
 };
 
 

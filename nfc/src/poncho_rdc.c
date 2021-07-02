@@ -1,6 +1,7 @@
 #include <stdbool.h>
 
 #include "board.h"
+#include "poncho_rdc.h"
 #include "spi.h"
 
 /**

@@ -3,6 +3,10 @@
 
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void temperature_ds18b20_init();
 
 uint32_t temperature_ds18b20_get(uint8_t sensor, float *var);

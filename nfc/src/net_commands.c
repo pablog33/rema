@@ -46,6 +46,7 @@ JSON_Value* logs_cmd(JSON_Value const *pars)
 			if (xQueueReceive(debug_queue, &dbg_msg, (TickType_t) 0) == pdPASS) {
 				json_array_append_string(json_value_get_array(msg_array), dbg_msg);
 				vPortFree(dbg_msg);
+				dbg_msg = NULL;
 			}
 		}
 

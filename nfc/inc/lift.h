@@ -3,6 +3,10 @@
 
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define LIFT_DIRECTION_CHANGE_DELAY_MS	500
 
 enum lift_direction {

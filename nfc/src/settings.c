@@ -30,7 +30,7 @@ static struct settings settings_defaults()
  * @brief 	initializes EEPROM
  * @returns	nothing
  */
-void settings_init(struct settings settings)
+void settings_init()
 {
 	EEPROM_init();
 }
@@ -55,8 +55,8 @@ void settings_save(struct settings settings)
 	EEPROM_Erase(PAGE_ADDR);
 
 	lDebug(Info, "EEPROM write...");
-	EEPROM_Write(0, PAGE_ADDR, (uint32_t*) &settings,
-			(sizeof settings + 3) & ~0x03);
+	EEPROM_Write(0, PAGE_ADDR, (void*) &settings,
+			sizeof settings);
 }
 
 /**
@@ -69,8 +69,8 @@ struct settings settings_read()
 	struct settings settings;
 
 	lDebug(Info, "EEPROM Read...");
-	EEPROM_Read(0, PAGE_ADDR, (uint32_t*) &settings,
-			(sizeof settings + 3) & ~0x03);
+	EEPROM_Read(0, PAGE_ADDR, (void*) &settings,
+			sizeof settings);
 
 	if ((settings.gw.addr == 0) || (settings.ipaddr.addr == 0)
 			|| (settings.netmask.addr == 0) || (settings.port == 0)) {
