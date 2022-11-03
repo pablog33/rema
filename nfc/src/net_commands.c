@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "debug.h"
+#include "FreeRTOS.h"
 
 #include "net_commands.h"
 #include "pole.h"
@@ -93,6 +94,8 @@ JSON_Value* pole_closed_loop_cmd(JSON_Value const *pars)
 	return ans;
 }
 
+
+
 JSON_Value* arm_free_run_cmd(JSON_Value const *pars)
 {
 	if (pars && json_value_get_type(pars) == JSONObject) {
@@ -102,6 +105,21 @@ JSON_Value* arm_free_run_cmd(JSON_Value const *pars)
 				"speed");
 
 		if (dir && speed != 0) {
+
+
+			struct mot_pap_msg *pArmMsg = (struct mot_pap_msg*)
+					pvPortMalloc(
+					sizeof(struct mot_pap_msg));
+			
+				pArmMsg->type = MOT_PAP_TYPE_FREE_RUNNING;
+				pArmMsg->free_run_direction = (strcmp(dir,"CW") == 0 ? MOT_PAP_DIRECTION_CW : MOT_PAP_DIRECTION_CCW);
+			    pArmMsg->free_run_speed = (int) speed;
+			if (xQueueSend(arm_queue, &pArmMsg, portMAX_DELAY) == pdPASS) {
+				lDebug(Debug, " Comando enviado a arm.c exitoso!");
+			}
+
+
+
 			lDebug(Info, "ARM_FREE_RUN DIR: %s, SPEED: %d", dir, (int ) speed);
 		}
 		JSON_Value *ans = json_value_init_object();
