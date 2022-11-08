@@ -15,6 +15,10 @@
 #define PROTOCOL_VERSION  	"JSON_1.0"
 
 bool stall_detection = true;
+extern int count_a;
+extern int count_b;
+extern int count_z;
+extern int count_isr;
 
 typedef struct {
 	char *cmd_name;
@@ -24,9 +28,12 @@ typedef struct {
 JSON_Value* telemetria_cmd(JSON_Value const *pars)
 {
 	JSON_Value *ans = json_value_init_object();
-	json_object_set_value(json_value_get_object(ans), "ARM", arm_json());
-	json_object_set_value(json_value_get_object(ans), "POLE", pole_json());
+	json_object_set_number(json_value_get_object(ans), "cuentas A", count_a);
+	json_object_set_number(json_value_get_object(ans), "cuentas B", count_b);
+	json_object_set_number(json_value_get_object(ans), "cuentas Z", count_z);
+	json_object_set_number(json_value_get_object(ans), "cuentas ISR", count_isr);
 	return ans;
+
 }
 
 JSON_Value* logs_cmd(JSON_Value const *pars)
@@ -45,7 +52,8 @@ JSON_Value* logs_cmd(JSON_Value const *pars)
 		for (int x = 0; x < extract; x++) {
 			char *dbg_msg = NULL;
 			if (xQueueReceive(debug_queue, &dbg_msg, (TickType_t) 0) == pdPASS) {
-				json_array_append_string(json_value_get_array(msg_array), dbg_msg);
+				json_array_append_string(json_value_get_array(msg_array),
+						dbg_msg);
 				vPortFree(dbg_msg);
 				dbg_msg = NULL;
 			}
@@ -77,11 +85,24 @@ JSON_Value* protocol_version_cmd(JSON_Value const *pars)
 
 JSON_Value* control_enable_cmd(JSON_Value const *pars)
 {
-	static bool enabled = false;
-	enabled = !enabled;
+	bool enabled = json_object_get_boolean(json_value_get_object(pars),
+			"enabled");
+
+	relay_main_pwr(enabled);
 
 	JSON_Value *ans = json_value_init_object();
 	json_object_set_boolean(json_value_get_object(ans), "ACK", enabled);
+	return ans;
+}
+
+JSON_Value* stall_control_cmd(JSON_Value const *pars)
+{
+
+	stall_detection = json_object_get_boolean(json_value_get_object(pars),
+			"enabled");
+
+	JSON_Value *ans = json_value_init_object();
+	json_object_set_boolean(json_value_get_object(ans), "ACK", stall_detection);
 	return ans;
 }
 
@@ -94,8 +115,6 @@ JSON_Value* pole_closed_loop_cmd(JSON_Value const *pars)
 	return ans;
 }
 
-
-
 JSON_Value* arm_free_run_cmd(JSON_Value const *pars)
 {
 	if (pars && json_value_get_type(pars) == JSONObject) {
@@ -106,21 +125,64 @@ JSON_Value* arm_free_run_cmd(JSON_Value const *pars)
 
 		if (dir && speed != 0) {
 
-
-			struct mot_pap_msg *pArmMsg = (struct mot_pap_msg*)
-					pvPortMalloc(
+			struct mot_pap_msg *pArmMsg = (struct mot_pap_msg*) pvPortMalloc(
 					sizeof(struct mot_pap_msg));
-			
-				pArmMsg->type = MOT_PAP_TYPE_FREE_RUNNING;
-				pArmMsg->free_run_direction = (strcmp(dir,"CW") == 0 ? MOT_PAP_DIRECTION_CW : MOT_PAP_DIRECTION_CCW);
-			    pArmMsg->free_run_speed = (int) speed;
+
+			pArmMsg->type = MOT_PAP_TYPE_FREE_RUNNING;
+			pArmMsg->free_run_direction = (
+					strcmp(dir, "CW") == 0 ?
+							MOT_PAP_DIRECTION_CW : MOT_PAP_DIRECTION_CCW);
+			pArmMsg->free_run_speed = (int) speed;
 			if (xQueueSend(arm_queue, &pArmMsg, portMAX_DELAY) == pdPASS) {
 				lDebug(Debug, " Comando enviado a arm.c exitoso!");
 			}
 
-
-
 			lDebug(Info, "ARM_FREE_RUN DIR: %s, SPEED: %d", dir, (int ) speed);
+		}
+		JSON_Value *ans = json_value_init_object();
+		json_object_set_boolean(json_value_get_object(ans), "ACK", true);
+		return ans;
+	}
+	return NULL;
+}
+
+JSON_Value* arm_stop_cmd(JSON_Value const *pars)
+{
+	struct mot_pap_msg *pArmMsg = (struct mot_pap_msg*) pvPortMalloc(
+			sizeof(struct mot_pap_msg));
+
+	pArmMsg->type = MOT_PAP_TYPE_STOP;
+	if (xQueueSend(arm_queue, &pArmMsg, portMAX_DELAY) == pdPASS) {
+		lDebug(Debug, " Comando enviado a arm.c exitoso!");
+	}
+	JSON_Value *ans = json_value_init_object();
+	json_object_set_boolean(json_value_get_object(ans), "ACK", true);
+	return ans;
+}
+
+JSON_Value* pole_free_run_cmd(JSON_Value const *pars)
+{
+	if (pars && json_value_get_type(pars) == JSONObject) {
+		char const *dir = json_object_get_string(json_value_get_object(pars),
+				"dir");
+		double speed = json_object_get_number(json_value_get_object(pars),
+				"speed");
+
+		if (dir && speed != 0) {
+
+			struct mot_pap_msg *pPoleMsg = (struct mot_pap_msg*) pvPortMalloc(
+					sizeof(struct mot_pap_msg));
+
+			pPoleMsg->type = MOT_PAP_TYPE_FREE_RUNNING;
+			pPoleMsg->free_run_direction = (
+					strcmp(dir, "CW") == 0 ?
+							MOT_PAP_DIRECTION_CW : MOT_PAP_DIRECTION_CCW);
+			pPoleMsg->free_run_speed = (int) speed;
+			if (xQueueSend(pole_queue, &pPoleMsg, portMAX_DELAY) == pdPASS) {
+				lDebug(Debug, " Comando enviado a pole.c exitoso!");
+			}
+
+			lDebug(Info, "POLE_FREE_RUN DIR: %s, SPEED: %d", dir, (int ) speed);
 		}
 		JSON_Value *ans = json_value_init_object();
 		json_object_set_boolean(json_value_get_object(ans), "ACK", true);
@@ -187,9 +249,12 @@ JSON_Value* network_settings_cmd(JSON_Value const *pars)
 JSON_Value* mem_info_cmd(JSON_Value const *pars)
 {
 	JSON_Value *ans = json_value_init_object();
-	json_object_set_number(json_value_get_object(ans), "MEM_TOTAL", configTOTAL_HEAP_SIZE);
-	json_object_set_number(json_value_get_object(ans), "MEM_FREE", xPortGetFreeHeapSize());
-	json_object_set_number(json_value_get_object(ans), "MEM_MIN_FREE", xPortGetMinimumEverFreeHeapSize());
+	json_object_set_number(json_value_get_object(ans), "MEM_TOTAL",
+	configTOTAL_HEAP_SIZE);
+	json_object_set_number(json_value_get_object(ans), "MEM_FREE",
+			xPortGetFreeHeapSize());
+	json_object_set_number(json_value_get_object(ans), "MEM_MIN_FREE",
+			xPortGetMinimumEverFreeHeapSize());
 	return ans;
 }
 
@@ -203,7 +268,6 @@ JSON_Value* temperature_info_cmd(JSON_Value const *pars)
 	json_object_set_number(json_value_get_object(ans), "TEMP2", (double) temp2);
 	return ans;
 }
-
 
 // @formatter:off
 const cmd_entry cmds_table[] = {
@@ -224,8 +288,16 @@ const cmd_entry cmds_table[] = {
 				pole_closed_loop_cmd,
 		},
 		{
+				"STALL_CONTROL",
+				stall_control_cmd,
+		},
+		{
 				"ARM_FREE_RUN",
 				arm_free_run_cmd,
+		},
+		{
+				"POLE_FREE_RUN",
+				pole_free_run_cmd,
 		},
 		{
 				"TELEMETRIA",
@@ -247,6 +319,11 @@ const cmd_entry cmds_table[] = {
 				"TEMPERATURE_INFO",
 				temperature_info_cmd,
 		},
+		{
+				"ARM_STOP",
+				arm_stop_cmd,
+		},
+
 };
 // @formatter:on
 /**
