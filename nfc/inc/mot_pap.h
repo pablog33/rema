@@ -81,8 +81,8 @@ struct mot_pap {
 	uint32_t half_pulses;			// counts steps from the last call to supervisor task
 	uint16_t offset;
 	int32_t half_steps_requested;
-	int32_t half_steps_left;
-	int32_t steps_half_way;
+	int32_t half_steps_curr;
+	int32_t half_steps_to_middle;
 	int32_t max_speed_reached_steps;
 	int32_t ticks_last_time;
 	bool max_speed_reached;

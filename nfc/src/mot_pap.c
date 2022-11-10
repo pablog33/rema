@@ -144,13 +144,13 @@ void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
 		}
 		me->type = MOT_PAP_TYPE_STEPS;
 		me->dir = direction;
-		me->half_steps_left = steps << 1;
+		me->half_steps_curr = 0;
 		me->half_steps_requested = steps << 1;
 		gpio_set_pin_state(me->gpios.direction, me->dir);
 		me->requested_freq = mot_pap_free_run_freqs[speed] * 1000;
-		me->freq_increment = me->requested_freq / 50;
+		me->freq_increment = me->requested_freq / 100;
 		me->current_freq = me->freq_increment;
-		me->steps_half_way = steps;
+		me->half_steps_to_middle = me->half_steps_requested >> 1;
 		me->max_speed_reached = false;
 		me->ticks_last_time = xTaskGetTickCount();
 
@@ -232,19 +232,14 @@ void mot_pap_isr(struct mot_pap *me)
 	}
 
 	if (me->type == MOT_PAP_TYPE_STEPS) {
-		if (me->half_steps_left <= 0) {
+		if (me->half_steps_curr >= me->half_steps_requested) {
 			me->already_there = true;
 			me->type = MOT_PAP_TYPE_STOP;
 			tmr_stop(&(me->tmr));
 			return;
 		}
 
-		if (me->half_steps_left < (me->steps_half_way)) {
-			volatile int i = 0;
-			i++;
-		}
-
-		bool first_half_passed = me->half_steps_left <= (me->steps_half_way);
+		bool first_half_passed = me->half_steps_curr > (me->half_steps_to_middle);
 
 		if ((ticks_now - me->ticks_last_time) > pdMS_TO_TICKS(50)) {
 			if (!me->max_speed_reached && (!first_half_passed)) {
@@ -252,13 +247,12 @@ void mot_pap_isr(struct mot_pap *me)
 				if (me->current_freq >= MOT_PAP_MAX_FREQ) {
 					me->current_freq = MOT_PAP_MAX_FREQ;
 					me->max_speed_reached = true;
-					me->max_speed_reached_steps = (me->half_steps_requested
-							- me->half_steps_left);
+					me->max_speed_reached_steps = me->half_steps_curr;
 				}
 			}
-			if ((me->max_speed_reached
-					&& me->half_steps_left <= me->max_speed_reached_steps)
-					|| (!me->max_speed_reached && (first_half_passed))) {
+			int steps_left = me->half_steps_requested - me->half_steps_curr;
+			if ((me->max_speed_reached 	&& steps_left <= me->max_speed_reached_steps)
+					|| (!me->max_speed_reached && first_half_passed)) {
 				me->current_freq -= (me->freq_increment);
 				if (me->current_freq <= me->freq_increment) {
 					me->current_freq = me->freq_increment;
@@ -271,7 +265,7 @@ void mot_pap_isr(struct mot_pap *me)
 			me->ticks_last_time = ticks_now;
 		}
 
-		--me->half_steps_left;
+		++me->half_steps_curr;
 	}
 
 	gpio_toggle(me->gpios.step);
