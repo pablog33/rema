@@ -9,40 +9,15 @@
 #include "task.h"
 
 #include "misc.h"
-#include "ad2s1210.h"
 #include "debug.h"
 #include "relay.h"
 #include "tmr.h"
 
+extern bool stall_detection;
+
 // Frequencies expressed in Khz
 static const uint32_t mot_pap_free_run_freqs[] = { 0, 5, 15, 25, 50, 75, 75,
 		100, 125 };
-
-/**
- * @brief	corrects possible offsets of RDC alignment.
- * @param 	pos		: current RDC position
- * @param 	offset	: RDC value for 0 degrees
- * @returns	the offset corrected position
- */
-uint16_t mot_pap_offset_correction(uint16_t pos, uint16_t offset,
-		uint8_t resolution)
-{
-	int32_t corrected = pos - offset;
-	if (corrected < 0)
-		corrected = corrected + (int32_t) (1 << resolution);
-	return (uint16_t) corrected;
-}
-
-/**
- * @brief	reads RDC position taking into account offset
- * @param 	me			: struct mot_pap pointer
- * @returns	nothing
- */
-void mot_pap_read_corrected_pos(struct mot_pap *me)
-{
-	me->posAct = mot_pap_offset_correction(ad2s1210_read_position(me->rdc),
-			me->offset, me->rdc->resolution);
-}
 
 /**
  * @brief	returns the direction of movement depending if the error is positive or negative
@@ -77,8 +52,8 @@ void mot_pap_supervise(struct mot_pap *me)
 	bool already_there;
 	enum mot_pap_direction dir;
 
-	me->posAct = mot_pap_offset_correction(ad2s1210_read_position(me->rdc),
-			me->offset, me->rdc->resolution);
+//	me->posAct = mot_pap_offset_correction(ad2s1210_read_position(me->rdc),
+//			me->offset, me->rdc->resolution);
 
 	if (stall_detection) {
 		if (abs((int) (me->posAct - me->last_pos)) < MOT_PAP_STALL_THRESHOLD) {
@@ -119,7 +94,7 @@ void mot_pap_supervise(struct mot_pap *me)
 				tmr_stop(&(me->tmr));
 				vTaskDelay(pdMS_TO_TICKS(MOT_PAP_DIRECTION_CHANGE_DELAY_MS));
 				me->dir = dir;
-				me->gpios.direction(me->dir);
+				gpio_set_pin_state(me->gpios.direction, me->dir);
 				tmr_start(&(me->tmr));
 			}
 		}
@@ -145,7 +120,7 @@ void mot_pap_move_free_run(struct mot_pap *me, enum mot_pap_direction direction,
 		}
 		me->type = MOT_PAP_TYPE_FREE_RUNNING;
 		me->dir = direction;
-		me->gpios.direction(me->dir);
+		gpio_set_pin_state(me->gpios.direction, me->dir);
 		me->requested_freq = mot_pap_free_run_freqs[speed] * 1000;
 
 		tmr_stop(&(me->tmr));
@@ -171,7 +146,7 @@ void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
 		me->dir = direction;
 		me->half_steps_left = steps << 1;
 		me->half_steps_requested = steps << 1;
-		me->gpios.direction(me->dir);
+		gpio_set_pin_state(me->gpios.direction, me->dir);
 		me->requested_freq = mot_pap_free_run_freqs[speed] * 1000;
 		me->freq_increment = me->requested_freq / 50;
 		me->current_freq = me->freq_increment;
@@ -222,7 +197,7 @@ void mot_pap_move_closed_loop(struct mot_pap *me, uint16_t setpoint)
 		}
 		me->type = MOT_PAP_TYPE_CLOSED_LOOP;
 		me->dir = dir;
-		me->gpios.direction(me->dir);
+		gpio_set_pin_state(me->gpios.direction, me->dir);
 		me->requested_freq = MOT_PAP_MAX_FREQ;
 		tmr_stop(&(me->tmr));
 		tmr_set_freq(&(me->tmr), me->requested_freq);
@@ -280,8 +255,6 @@ void mot_pap_isr(struct mot_pap *me)
 							- me->half_steps_left);
 				}
 			}
-//			else {
-//				if (me->half_steps_left <= me->flat_reached_steps || me->half_steps_left < (me->steps_half_way)) {
 			if ((me->flat_reached
 					&& me->half_steps_left <= me->flat_reached_steps)
 					|| (!me->flat_reached && (me->half_steps_left < (me->steps_half_way)))) {
@@ -300,7 +273,7 @@ void mot_pap_isr(struct mot_pap *me)
 		--me->half_steps_left;
 	}
 
-	me->gpios.pulse();
+	gpio_toggle(me->gpios.step);
 
 	if (++(me->half_pulses) == MOT_PAP_SUPERVISOR_RATE) {
 		me->half_pulses = 0;
@@ -318,8 +291,6 @@ void mot_pap_isr(struct mot_pap *me)
  */
 void mot_pap_update_position(struct mot_pap *me)
 {
-	me->posAct = mot_pap_offset_correction(ad2s1210_read_position(me->rdc),
-			me->offset, me->rdc->resolution);
 }
 
 JSON_Value* mot_pap_json(struct mot_pap *me)

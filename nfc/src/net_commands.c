@@ -1,18 +1,19 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <x_axis.h>
 #include "debug.h"
 #include "FreeRTOS.h"
 
 #include "net_commands.h"
-#include "pole.h"
-#include "arm.h"
 #include "parson.h"
 #include "json_wp.h"
 #include "settings.h"
 #include "temperature_ds18b20.h"
 
 #define PROTOCOL_VERSION  	"JSON_1.0"
+
+extern QueueHandle_t x_axis_queue;
 
 bool stall_detection = true;
 extern int count_z;
@@ -132,7 +133,7 @@ JSON_Value* arm_free_run_cmd(JSON_Value const *pars)
 					strcmp(dir, "CW") == 0 ?
 							MOT_PAP_DIRECTION_CW : MOT_PAP_DIRECTION_CCW);
 			pArmMsg->free_run_speed = (int) speed;
-			if (xQueueSend(arm_queue, &pArmMsg, portMAX_DELAY) == pdPASS) {
+			if (xQueueSend(x_axis_queue, &pArmMsg, portMAX_DELAY) == pdPASS) {
 				lDebug(Debug, " Comando enviado a arm.c exitoso!");
 			}
 
@@ -166,7 +167,7 @@ JSON_Value* arm_free_run_steps_cmd(JSON_Value const *pars)
 							MOT_PAP_DIRECTION_CW : MOT_PAP_DIRECTION_CCW);
 			pArmMsg->free_run_speed = (int) speed;
 			pArmMsg->steps = (int) steps;
-			if (xQueueSend(arm_queue, &pArmMsg, portMAX_DELAY) == pdPASS) {
+			if (xQueueSend(x_axis_queue, &pArmMsg, portMAX_DELAY) == pdPASS) {
 				lDebug(Debug, " Comando enviado a arm.c exitoso!");
 			}
 
@@ -186,7 +187,7 @@ JSON_Value* arm_stop_cmd(JSON_Value const *pars)
 			sizeof(struct mot_pap_msg));
 
 	pArmMsg->type = MOT_PAP_TYPE_STOP;
-	if (xQueueSend(arm_queue, &pArmMsg, portMAX_DELAY) == pdPASS) {
+	if (xQueueSend(x_axis_queue, &pArmMsg, portMAX_DELAY) == pdPASS) {
 		lDebug(Debug, " Comando enviado a arm.c exitoso!");
 	}
 	JSON_Value *ans = json_value_init_object();
@@ -212,11 +213,11 @@ JSON_Value* pole_free_run_cmd(JSON_Value const *pars)
 					strcmp(dir, "CW") == 0 ?
 							MOT_PAP_DIRECTION_CW : MOT_PAP_DIRECTION_CCW);
 			pPoleMsg->free_run_speed = (int) speed;
-			if (xQueueSend(pole_queue, &pPoleMsg, portMAX_DELAY) == pdPASS) {
-				lDebug(Debug, " Comando enviado a pole.c exitoso!");
-			}
-
-			lDebug(Info, "POLE_FREE_RUN DIR: %s, SPEED: %d", dir, (int ) speed);
+//			if (xQueueSend(pole_queue, &pPoleMsg, portMAX_DELAY) == pdPASS) {
+//				lDebug(Debug, " Comando enviado a pole.c exitoso!");
+//			}
+//
+//			lDebug(Info, "POLE_FREE_RUN DIR: %s, SPEED: %d", dir, (int ) speed);
 		}
 		JSON_Value *ans = json_value_init_object();
 		json_object_set_boolean(json_value_get_object(ans), "ACK", true);

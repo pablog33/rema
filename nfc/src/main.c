@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <x_axis.h>
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -17,13 +18,8 @@
 #include "board.h"
 
 #include "debug.h"
-#include "dout.h"
-#include "lift.h"
-#include "pole.h"
-#include "arm.h"
 #include "temperature.h"
 #include "temperature_ds18b20.h"
-#include "poncho_rdc.h"
 #include "relay.h"
 #include "lwip_init.h"
 #include "settings.h"
@@ -31,6 +27,8 @@
 #include "tcp_server.h"
 #include "mem_check.h"
 #include "encoders.h"
+
+extern struct gpio_entry relay_1;
 
 /* GPa 201117 1850 Iss2: agregado de Heap_4.c*/
 uint8_t __attribute__((section ("." "data" ".$" "RamLoc40"))) ucHeap[configTOTAL_HEAP_SIZE];
@@ -55,21 +53,15 @@ static void prvSetupHardware(void)
 	Board_Init();
 	settings_init();
 	//settings_erase();
-	dout_init();
 	relay_init();
-	poncho_rdc_init();
 
-	arm_init();
-	//pole_init();
-	//lift_init();
+	x_axis_init();
 	//temperature_init();
 	//temperature_ds18b20_init();
 	encoders_init();
 	mem_check_init();
 
 
-	/* Utilizo el led spare para detectar conexión fisica del cable ethernet */
-	relay_spare_led(0); /* LOW */
 }
 
 /*****************************************************************************

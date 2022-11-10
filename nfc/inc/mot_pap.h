@@ -8,6 +8,7 @@
 #include "semphr.h"
 #include "tmr.h"
 #include "parson.h"
+#include "gpio.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,7 +37,7 @@ enum mot_pap_type {
 
 /**
  * @struct 	mot_pap_msg
- * @brief	messages to POLE or ARM tasks.
+ * @brief	messages to axis tasks.
  */
 struct mot_pap_msg {
 	enum mot_pap_type type;
@@ -51,13 +52,13 @@ struct mot_pap_msg {
  * @brief	pointers to functions to handle GPIO lines of this stepper motor.
  */
 struct mot_pap_gpios {
-	void (*direction)(enum mot_pap_direction dir);///< pointer to direction line function handler
-	void (*pulse)(void);			///< pointer to pulse line function handler
+	struct gpio_entry direction;
+	struct gpio_entry step;
 };
 
 /**
  * @struct 	mot_pap
- * @brief	POLE or ARM structure.
+ * @brief	structure for axis motors.
  */
 struct mot_pap {
 	char *name;
@@ -107,12 +108,6 @@ void mot_pap_update_position(struct mot_pap *me);
 uint32_t mot_pap_read_on_condition(void);
 
 JSON_Value *mot_pap_json(struct mot_pap *me);
-
-extern QueueHandle_t lift_queue;
-extern QueueHandle_t pole_queue;
-extern QueueHandle_t arm_queue;
-
-extern bool stall_detection;
 
 #ifdef __cplusplus
 }

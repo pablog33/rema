@@ -1,15 +1,13 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include <x_axis.h>
 
 #include "FreeRTOS.h"
 #include "semphr.h"
 #include "board.h"
 
 #include "debug.h"
-#include "dout.h"
 #include "mot_pap.h"
-#include "pole.h"
-#include "arm.h"
 
 #define TMR_INTERRUPT_PRIORITY 		( configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY + 2 )
 

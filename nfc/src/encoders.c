@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include "board.h"
 #include "encoders.h"
+#include "gpio.h"
 
 int count_z = 0;
 int count_b = 0;
@@ -47,21 +48,9 @@ void encoders_init(void)
 	count_b = 0;
 	count_a = 0;
 
-	/* Set pin back to GPIO (on some boards may have been changed to something
-	 else by Board_Init()) */
-	Chip_SCU_PinMuxSet(7, 4,
-			(SCU_MODE_INBUFF_EN | SCU_MODE_PULLUP | SCU_MODE_FUNC0));
-
-	Chip_SCU_PinMuxSet(7, 5,
-			(SCU_MODE_INBUFF_EN | SCU_MODE_PULLUP | SCU_MODE_FUNC0));
-
-	Chip_SCU_PinMuxSet(7, 6,
-			(SCU_MODE_INBUFF_EN | SCU_MODE_PULLUP | SCU_MODE_FUNC0));
-
-	/* Group GPIO interrupt 0 will be invoked when the button is pressed. */
-	Chip_GPIO_SetPinDIRInput(LPC_GPIO_PORT, 3, 12);
-	Chip_GPIO_SetPinDIRInput(LPC_GPIO_PORT, 3, 13);
-	Chip_GPIO_SetPinDIRInput(LPC_GPIO_PORT, 3, 14);
+	gpio_init_input((struct gpio_entry) {7, 4, (SCU_MODE_INBUFF_EN | SCU_MODE_PULLUP | SCU_MODE_FUNC0), 3, 12});
+	gpio_init_input((struct gpio_entry) {7, 5, (SCU_MODE_INBUFF_EN | SCU_MODE_PULLUP | SCU_MODE_FUNC0), 3, 13});
+	gpio_init_input((struct gpio_entry) {7, 6, (SCU_MODE_INBUFF_EN | SCU_MODE_PULLUP | SCU_MODE_FUNC0), 3, 14});
 
 	/* Configure interrupt channel for the GPIO pin in SysCon block */
 	Chip_SCU_GPIOIntPinSel(0, 3, 12);
