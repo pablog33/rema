@@ -66,6 +66,7 @@ struct mot_pap {
 	uint16_t posCmd;
 	uint16_t posAct;
 	int32_t requested_freq;
+	int32_t freq_increment;
 	int32_t current_freq;
 	bool stalled;
 	bool already_there;
@@ -82,6 +83,7 @@ struct mot_pap {
 	int32_t half_steps_left;
 	int32_t steps_half_way;
 	int32_t flat_reached_steps;
+	int32_t ticks_last_time;
 	bool flat_reached;
 };
 

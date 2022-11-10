@@ -173,10 +173,11 @@ void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
 		me->half_steps_requested = steps << 1;
 		me->gpios.direction(me->dir);
 		me->requested_freq = mot_pap_free_run_freqs[speed] * 1000;
-
-		me->current_freq = me->requested_freq / 50;	// 25 steps
+		me->freq_increment = me->requested_freq / 50;
+		me->current_freq = me->freq_increment;
 		me->steps_half_way = steps;
 		me->flat_reached = false;
+		me->ticks_last_time = xTaskGetTickCount();
 
 		tmr_stop(&(me->tmr));
 		tmr_set_freq(&(me->tmr), me->current_freq);
@@ -247,7 +248,6 @@ void mot_pap_stop(struct mot_pap *me)
  */
 void mot_pap_isr(struct mot_pap *me)
 {
-	static int ticks_last_time = 0;
 	int ticks_now = xTaskGetTickCountFromISR();
 	BaseType_t xHigherPriorityTaskWoken;
 
@@ -269,30 +269,32 @@ void mot_pap_isr(struct mot_pap *me)
 			i++;
 		}
 
-		if ((ticks_now - ticks_last_time) > pdMS_TO_TICKS(50)) {
-			// int sign = (me->half_steps_left >= (me->steps_half_way)) ? 1 : -1;
-
-			if (!me->flat_reached && (me->half_steps_left > (me->steps_half_way))) {
-				me->current_freq += (me->requested_freq / 50);
-				me->current_freq = stb_clamp(me->current_freq,
-						(me->requested_freq / 50), MOT_PAP_MAX_FREQ);
-				if (me->current_freq == MOT_PAP_MAX_FREQ) {
+		if ((ticks_now - me->ticks_last_time) > pdMS_TO_TICKS(50)) {
+			if (!me->flat_reached
+					&& (me->half_steps_left > (me->steps_half_way))) {
+				me->current_freq += (me->freq_increment);
+				if (me->current_freq >= MOT_PAP_MAX_FREQ) {
+					me->current_freq = MOT_PAP_MAX_FREQ;
 					me->flat_reached = true;
 					me->flat_reached_steps = (me->half_steps_requested
 							- me->half_steps_left);
 				}
-			} else {
-				if (me->half_steps_left < me->flat_reached_steps || me->half_steps_left < (me->steps_half_way)) {
-					me->current_freq -= (me->requested_freq / 50);
-					me->current_freq = stb_clamp(me->current_freq,
-							(me->requested_freq / 50), MOT_PAP_MAX_FREQ);
+			}
+//			else {
+//				if (me->half_steps_left <= me->flat_reached_steps || me->half_steps_left < (me->steps_half_way)) {
+			if ((me->flat_reached
+					&& me->half_steps_left <= me->flat_reached_steps)
+					|| (!me->flat_reached && (me->half_steps_left < (me->steps_half_way)))) {
+				me->current_freq -= (me->freq_increment);
+				if (me->current_freq <= me->freq_increment) {
+					me->current_freq = me->freq_increment;
 				}
 			}
 
 			tmr_stop(&(me->tmr));
 			tmr_set_freq(&(me->tmr), me->current_freq);
 			tmr_start(&(me->tmr));
-			ticks_last_time = ticks_now;
+			me->ticks_last_time = ticks_now;
 		}
 
 		--me->half_steps_left;
