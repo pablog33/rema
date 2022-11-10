@@ -65,7 +65,8 @@ struct mot_pap {
 	enum mot_pap_direction dir;
 	uint16_t posCmd;
 	uint16_t posAct;
-	uint32_t freq;
+	int32_t requested_freq;
+	int32_t current_freq;
 	bool stalled;
 	bool already_there;
 	uint16_t stalled_counter;
@@ -77,7 +78,11 @@ struct mot_pap {
 	uint16_t last_pos;
 	uint32_t half_pulses;			// counts steps from the last call to supervisor task
 	uint16_t offset;
+	int32_t half_steps_requested;
 	int32_t half_steps_left;
+	int32_t steps_half_way;
+	int32_t flat_reached_steps;
+	bool flat_reached;
 };
 
 uint16_t mot_pap_offset_correction(uint16_t pos, uint16_t offset,

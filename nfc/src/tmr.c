@@ -45,7 +45,7 @@ int32_t tmr_set_freq(struct tmr *me, uint32_t tick_rate_hz)
 	Chip_TIMER_Reset(me->lpc_timer);
 
 	if ((tick_rate_hz < 0) || (tick_rate_hz > MOT_PAP_COMPUMOTOR_MAX_FREQ)) {
-		lDebug(Error, "Timer: invalid freq");
+//		lDebug(Error, "Timer: invalid freq");
 		return -1;
 	}
 

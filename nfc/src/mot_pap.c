@@ -8,6 +8,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
+#include "misc.h"
 #include "ad2s1210.h"
 #include "debug.h"
 #include "relay.h"
@@ -16,7 +17,6 @@
 // Frequencies expressed in Khz
 static const uint32_t mot_pap_free_run_freqs[] = { 0, 5, 15, 25, 50, 75, 75,
 		100, 125 };
-
 
 /**
  * @brief	corrects possible offsets of RDC alignment.
@@ -65,7 +65,6 @@ bool mot_pap_free_run_speed_ok(uint32_t speed)
 	return ((speed > 0) && (speed <= MOT_PAP_MAX_SPEED_FREE_RUN));
 }
 
-
 /**
  * @brief 	supervise motor movement for stall or position reached in closed loop
  * @param 	me			: struct mot_pap pointer
@@ -80,8 +79,6 @@ void mot_pap_supervise(struct mot_pap *me)
 
 	me->posAct = mot_pap_offset_correction(ad2s1210_read_position(me->rdc),
 			me->offset, me->rdc->resolution);
-
-
 
 	if (stall_detection) {
 		if (abs((int) (me->posAct - me->last_pos)) < MOT_PAP_STALL_THRESHOLD) {
@@ -103,7 +100,7 @@ void mot_pap_supervise(struct mot_pap *me)
 		error = me->posCmd - me->posAct;
 
 		if ((abs((int) error) < MOT_PAP_POS_PROXIMITY_THRESHOLD)) {
-			me->freq = MOT_PAP_MAX_FREQ / 4;
+			me->requested_freq = MOT_PAP_MAX_FREQ / 4;
 			tmr_stop(&(me->tmr));
 			tmr_set_freq(&(me->tmr), MOT_PAP_MAX_FREQ / 4);
 			tmr_start(&(me->tmr));
@@ -149,13 +146,14 @@ void mot_pap_move_free_run(struct mot_pap *me, enum mot_pap_direction direction,
 		me->type = MOT_PAP_TYPE_FREE_RUNNING;
 		me->dir = direction;
 		me->gpios.direction(me->dir);
-		me->freq = mot_pap_free_run_freqs[speed] * 1000;
+		me->requested_freq = mot_pap_free_run_freqs[speed] * 1000;
 
 		tmr_stop(&(me->tmr));
-		tmr_set_freq(&(me->tmr), me->freq);
+		tmr_set_freq(&(me->tmr), me->requested_freq);
 		tmr_start(&(me->tmr));
 		lDebug(Info, "%s: FREE RUN, speed: %u, direction: %s", me->name,
-				me->freq, me->dir == MOT_PAP_DIRECTION_CW ? "CW" : "CCW");
+				me->requested_freq,
+				me->dir == MOT_PAP_DIRECTION_CW ? "CW" : "CCW");
 	} else {
 		lDebug(Warn, "%s: chosen speed out of bounds %u", me->name, speed);
 	}
@@ -172,19 +170,24 @@ void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
 		me->type = MOT_PAP_TYPE_STEPS;
 		me->dir = direction;
 		me->half_steps_left = steps << 1;
+		me->half_steps_requested = steps << 1;
 		me->gpios.direction(me->dir);
-		me->freq = mot_pap_free_run_freqs[speed] * 1000;
+		me->requested_freq = mot_pap_free_run_freqs[speed] * 1000;
+
+		me->current_freq = me->requested_freq / 50;	// 25 steps
+		me->steps_half_way = steps;
+		me->flat_reached = false;
 
 		tmr_stop(&(me->tmr));
-		tmr_set_freq(&(me->tmr), me->freq);
+		tmr_set_freq(&(me->tmr), me->current_freq);
 		tmr_start(&(me->tmr));
 		lDebug(Info, "%s: STEPS RUN, speed: %u, direction: %s", me->name,
-				me->freq, me->dir == MOT_PAP_DIRECTION_CW ? "CW" : "CCW");
+				me->requested_freq,
+				me->dir == MOT_PAP_DIRECTION_CW ? "CW" : "CCW");
 	} else {
 		lDebug(Warn, "%s: chosen speed out of bounds %u", me->name, speed);
 	}
 }
-
 
 /**
  * @brief	if allowed, starts a closed loop movement
@@ -219,9 +222,9 @@ void mot_pap_move_closed_loop(struct mot_pap *me, uint16_t setpoint)
 		me->type = MOT_PAP_TYPE_CLOSED_LOOP;
 		me->dir = dir;
 		me->gpios.direction(me->dir);
-		me->freq = MOT_PAP_MAX_FREQ;
+		me->requested_freq = MOT_PAP_MAX_FREQ;
 		tmr_stop(&(me->tmr));
-		tmr_set_freq(&(me->tmr), me->freq);
+		tmr_set_freq(&(me->tmr), me->requested_freq);
 		tmr_start(&(me->tmr));
 	}
 }
@@ -244,6 +247,8 @@ void mot_pap_stop(struct mot_pap *me)
  */
 void mot_pap_isr(struct mot_pap *me)
 {
+	static int ticks_last_time = 0;
+	int ticks_now = xTaskGetTickCountFromISR();
 	BaseType_t xHigherPriorityTaskWoken;
 
 	if (me->dir != me->last_dir) {
@@ -258,6 +263,38 @@ void mot_pap_isr(struct mot_pap *me)
 			tmr_stop(&(me->tmr));
 			return;
 		}
+
+		if (me->half_steps_left < (me->steps_half_way)) {
+			volatile int i = 0;
+			i++;
+		}
+
+		if ((ticks_now - ticks_last_time) > pdMS_TO_TICKS(50)) {
+			// int sign = (me->half_steps_left >= (me->steps_half_way)) ? 1 : -1;
+
+			if (!me->flat_reached && (me->half_steps_left > (me->steps_half_way))) {
+				me->current_freq += (me->requested_freq / 50);
+				me->current_freq = stb_clamp(me->current_freq,
+						(me->requested_freq / 50), MOT_PAP_MAX_FREQ);
+				if (me->current_freq == MOT_PAP_MAX_FREQ) {
+					me->flat_reached = true;
+					me->flat_reached_steps = (me->half_steps_requested
+							- me->half_steps_left);
+				}
+			} else {
+				if (me->half_steps_left < me->flat_reached_steps || me->half_steps_left < (me->steps_half_way)) {
+					me->current_freq -= (me->requested_freq / 50);
+					me->current_freq = stb_clamp(me->current_freq,
+							(me->requested_freq / 50), MOT_PAP_MAX_FREQ);
+				}
+			}
+
+			tmr_stop(&(me->tmr));
+			tmr_set_freq(&(me->tmr), me->current_freq);
+			tmr_start(&(me->tmr));
+			ticks_last_time = ticks_now;
+		}
+
 		--me->half_steps_left;
 	}
 
@@ -283,14 +320,13 @@ void mot_pap_update_position(struct mot_pap *me)
 			me->offset, me->rdc->resolution);
 }
 
-JSON_Value *mot_pap_json(struct mot_pap *me) {
-	JSON_Value * ans = json_value_init_object();
+JSON_Value* mot_pap_json(struct mot_pap *me)
+{
+	JSON_Value *ans = json_value_init_object();
 	json_object_set_number(json_value_get_object(ans), "posCmd", me->posCmd);
 	json_object_set_number(json_value_get_object(ans), "posAct", me->posAct);
 	json_object_set_boolean(json_value_get_object(ans), "stalled", me->stalled);
 	json_object_set_number(json_value_get_object(ans), "offset", me->offset);
 	return ans;
 }
-
-
 
