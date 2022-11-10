@@ -83,9 +83,9 @@ struct mot_pap {
 	int32_t half_steps_requested;
 	int32_t half_steps_left;
 	int32_t steps_half_way;
-	int32_t flat_reached_steps;
+	int32_t max_speed_reached_steps;
 	int32_t ticks_last_time;
-	bool flat_reached;
+	bool max_speed_reached;
 };
 
 uint16_t mot_pap_offset_correction(uint16_t pos, uint16_t offset,

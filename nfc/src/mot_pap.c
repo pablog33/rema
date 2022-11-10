@@ -151,7 +151,7 @@ void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
 		me->freq_increment = me->requested_freq / 50;
 		me->current_freq = me->freq_increment;
 		me->steps_half_way = steps;
-		me->flat_reached = false;
+		me->max_speed_reached = false;
 		me->ticks_last_time = xTaskGetTickCount();
 
 		tmr_stop(&(me->tmr));
@@ -244,20 +244,21 @@ void mot_pap_isr(struct mot_pap *me)
 			i++;
 		}
 
+		bool first_half_passed = me->half_steps_left <= (me->steps_half_way);
+
 		if ((ticks_now - me->ticks_last_time) > pdMS_TO_TICKS(50)) {
-			if (!me->flat_reached
-					&& (me->half_steps_left > (me->steps_half_way))) {
+			if (!me->max_speed_reached && (!first_half_passed)) {
 				me->current_freq += (me->freq_increment);
 				if (me->current_freq >= MOT_PAP_MAX_FREQ) {
 					me->current_freq = MOT_PAP_MAX_FREQ;
-					me->flat_reached = true;
-					me->flat_reached_steps = (me->half_steps_requested
+					me->max_speed_reached = true;
+					me->max_speed_reached_steps = (me->half_steps_requested
 							- me->half_steps_left);
 				}
 			}
-			if ((me->flat_reached
-					&& me->half_steps_left <= me->flat_reached_steps)
-					|| (!me->flat_reached && (me->half_steps_left < (me->steps_half_way)))) {
+			if ((me->max_speed_reached
+					&& me->half_steps_left <= me->max_speed_reached_steps)
+					|| (!me->max_speed_reached && (first_half_passed))) {
 				me->current_freq -= (me->freq_increment);
 				if (me->current_freq <= me->freq_increment) {
 					me->current_freq = me->freq_increment;
