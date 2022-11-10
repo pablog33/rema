@@ -9,32 +9,31 @@
 #include "board.h"
 #include "encoders.h"
 
-int count_a = 0;
-int count_b = 0;
 int count_z = 0;
-int count_isr = 0;
+int count_b = 0;
+int count_a = 0;
 
-void GINT0_IRQHandler(void)
+
+/**
+* @brief	Handle interrupt from GPIO pin or GPIO pin mapped to PININT
+* @return	Nothing
+*/
+void GPIO0_IRQHandler(void)
 {
-	//static int count_isr = 0;
-	static int group = 0;
-	static int group_ant = 0;
-	udelay(50);
-	group = Chip_GPIO_GetPortValue(LPC_GPIO_PORT, 3);
+	Chip_PININT_ClearIntStatus(LPC_GPIO_PIN_INT, PININTCH(0));
+	++count_z;
+}
 
-	Chip_GPIOGP_ClearIntStatus(LPC_GPIOGROUP, 0);
-	int diff = group ^ group_ant;
+void GPIO1_IRQHandler(void)
+{
+	Chip_PININT_ClearIntStatus(LPC_GPIO_PIN_INT, PININTCH(1));
+	++count_b;
+}
 
-	++count_isr;
-
-	if (diff & (1 << 12))
-		count_a++;
-	if (diff & (1 << 13))
-		count_b++;
-	if (diff & (1 << 14))
-		count_z++;
-
-	group_ant = group;
+void GPIO2_IRQHandler(void)
+{
+	Chip_PININT_ClearIntStatus(LPC_GPIO_PIN_INT, PININTCH(2));
+	++count_a;
 }
 
 /**
@@ -44,9 +43,9 @@ void GINT0_IRQHandler(void)
 void encoders_init(void)
 {
 	//Chip_Clock_Enable(CLK_MX_GPIO);
-	count_a = 0;
-	count_b = 0;
 	count_z = 0;
+	count_b = 0;
+	count_a = 0;
 
 	/* Set pin back to GPIO (on some boards may have been changed to something
 	 else by Board_Init()) */
@@ -63,17 +62,30 @@ void encoders_init(void)
 	Chip_GPIO_SetPinDIRInput(LPC_GPIO_PORT, 3, 12);
 	Chip_GPIO_SetPinDIRInput(LPC_GPIO_PORT, 3, 13);
 	Chip_GPIO_SetPinDIRInput(LPC_GPIO_PORT, 3, 14);
-//	Chip_GPIOGP_SelectLowLevel(LPC_GPIOGROUP, 0, 3,
-//				 1 << 12 | 1 << 13 | 1<< 14);
-//	Chip_GPIOGP_SelectHighLevel(LPC_GPIOGROUP, 0, 3,
-//			1 << 12 | 1 << 13 | 1<< 14);
-	Chip_GPIOGP_EnableGroupPins(LPC_GPIOGROUP, 0, 3,
-			1 << 12 | 1 << 13 | 1<< 14 );
-	Chip_GPIOGP_SelectAndMode(LPC_GPIOGROUP, 0);
 
-	Chip_GPIOGP_SelectEdgeMode(LPC_GPIOGROUP, 0);
+	/* Configure interrupt channel for the GPIO pin in SysCon block */
+	Chip_SCU_GPIOIntPinSel(0, 3, 12);
+	Chip_SCU_GPIOIntPinSel(1, 3, 13);
+	Chip_SCU_GPIOIntPinSel(2, 3, 14);
 
-	/* Enable Group GPIO interrupt 0 */
-	NVIC_EnableIRQ(GINT0_IRQn);
+	/* Configure channel interrupt as edge sensitive and falling edge interrupt */
+	Chip_PININT_ClearIntStatus(LPC_GPIO_PIN_INT, PININTCH(0));
+	Chip_PININT_SetPinModeEdge(LPC_GPIO_PIN_INT, PININTCH(0));
+	Chip_PININT_EnableIntLow(LPC_GPIO_PIN_INT, PININTCH(0));
+	Chip_PININT_ClearIntStatus(LPC_GPIO_PIN_INT, PININTCH(1));
+	Chip_PININT_SetPinModeEdge(LPC_GPIO_PIN_INT, PININTCH(1));
+	Chip_PININT_EnableIntLow(LPC_GPIO_PIN_INT, PININTCH(1));
+	Chip_PININT_ClearIntStatus(LPC_GPIO_PIN_INT, PININTCH(2));
+	Chip_PININT_SetPinModeEdge(LPC_GPIO_PIN_INT, PININTCH(2));
+	Chip_PININT_EnableIntLow(LPC_GPIO_PIN_INT, PININTCH(2));
+
+	/* Enable interrupt in the NVIC */
+	NVIC_ClearPendingIRQ(PIN_INT0_IRQn);
+	NVIC_EnableIRQ(PIN_INT0_IRQn);
+	NVIC_ClearPendingIRQ(PIN_INT1_IRQn);
+	NVIC_EnableIRQ(PIN_INT1_IRQn);
+	NVIC_ClearPendingIRQ(PIN_INT2_IRQn);
+	NVIC_EnableIRQ(PIN_INT2_IRQn);
+
 
 }

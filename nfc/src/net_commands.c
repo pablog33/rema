@@ -15,10 +15,10 @@
 #define PROTOCOL_VERSION  	"JSON_1.0"
 
 bool stall_detection = true;
-extern int count_a;
-extern int count_b;
 extern int count_z;
-extern int count_isr;
+extern int count_b;
+extern int count_a;
+
 
 typedef struct {
 	char *cmd_name;
@@ -28,10 +28,9 @@ typedef struct {
 JSON_Value* telemetria_cmd(JSON_Value const *pars)
 {
 	JSON_Value *ans = json_value_init_object();
-	json_object_set_number(json_value_get_object(ans), "cuentas A", count_a);
+	json_object_set_number(json_value_get_object(ans), "cuentas A", count_z);
 	json_object_set_number(json_value_get_object(ans), "cuentas B", count_b);
-	json_object_set_number(json_value_get_object(ans), "cuentas Z", count_z);
-	json_object_set_number(json_value_get_object(ans), "cuentas ISR", count_isr);
+	json_object_set_number(json_value_get_object(ans), "cuentas Z", count_a);
 	return ans;
 
 }
@@ -145,6 +144,41 @@ JSON_Value* arm_free_run_cmd(JSON_Value const *pars)
 	}
 	return NULL;
 }
+
+JSON_Value* arm_free_run_steps_cmd(JSON_Value const *pars)
+{
+	if (pars && json_value_get_type(pars) == JSONObject) {
+		char const *dir = json_object_get_string(json_value_get_object(pars),
+				"dir");
+		double speed = json_object_get_number(json_value_get_object(pars),
+				"speed");
+		double steps = json_object_get_number(json_value_get_object(pars),
+				"steps");
+
+		if (dir && speed != 0) {
+
+			struct mot_pap_msg *pArmMsg = (struct mot_pap_msg*) pvPortMalloc(
+					sizeof(struct mot_pap_msg));
+
+			pArmMsg->type = MOT_PAP_TYPE_STEPS;
+			pArmMsg->free_run_direction = (
+					strcmp(dir, "CW") == 0 ?
+							MOT_PAP_DIRECTION_CW : MOT_PAP_DIRECTION_CCW);
+			pArmMsg->free_run_speed = (int) speed;
+			pArmMsg->steps = (int) steps;
+			if (xQueueSend(arm_queue, &pArmMsg, portMAX_DELAY) == pdPASS) {
+				lDebug(Debug, " Comando enviado a arm.c exitoso!");
+			}
+
+			lDebug(Info, "ARM_FREE_RUN DIR: %s, SPEED: %d", dir, (int ) speed);
+		}
+		JSON_Value *ans = json_value_init_object();
+		json_object_set_boolean(json_value_get_object(ans), "ACK", true);
+		return ans;
+	}
+	return NULL;
+}
+
 
 JSON_Value* arm_stop_cmd(JSON_Value const *pars)
 {
@@ -318,6 +352,10 @@ const cmd_entry cmds_table[] = {
 		{
 				"TEMPERATURE_INFO",
 				temperature_info_cmd,
+		},
+		{
+				"ARM_FREE_RUN_STEPS",
+				arm_free_run_steps_cmd,
 		},
 		{
 				"ARM_STOP",

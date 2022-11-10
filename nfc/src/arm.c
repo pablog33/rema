@@ -56,6 +56,10 @@ static void arm_task(void *par)
 				mot_pap_move_closed_loop(&arm, msg_rcv->closed_loop_setpoint);
 				break;
 
+			case MOT_PAP_TYPE_STEPS:
+				mot_pap_move_steps(&arm, msg_rcv->free_run_direction, msg_rcv->free_run_speed, msg_rcv->steps);
+				break;
+
 			default:
 				mot_pap_stop(&arm);
 				break;

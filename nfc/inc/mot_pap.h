@@ -20,7 +20,7 @@ extern "C" {
 #define MOT_PAP_COMPUMOTOR_MAX_FREQ				300000
 #define MOT_PAP_DIRECTION_CHANGE_DELAY_MS		500
 
-#define MOT_PAP_SUPERVISOR_RATE    				3000	//2 means one step
+#define MOT_PAP_SUPERVISOR_RATE    				2500	//2 means one step
 #define MOT_PAP_POS_PROXIMITY_THRESHOLD			100
 #define MOT_PAP_POS_THRESHOLD 					6
 #define MOT_PAP_STALL_THRESHOLD 				3
@@ -31,7 +31,7 @@ enum mot_pap_direction {
 };
 
 enum mot_pap_type {
-	MOT_PAP_TYPE_FREE_RUNNING, MOT_PAP_TYPE_CLOSED_LOOP, MOT_PAP_TYPE_STOP
+	MOT_PAP_TYPE_FREE_RUNNING, MOT_PAP_TYPE_CLOSED_LOOP, MOT_PAP_TYPE_STOP, MOT_PAP_TYPE_STEPS
 };
 
 /**
@@ -43,6 +43,7 @@ struct mot_pap_msg {
 	enum mot_pap_direction free_run_direction;
 	uint32_t free_run_speed;
 	uint16_t closed_loop_setpoint;
+	uint32_t steps;
 };
 
 /**
@@ -76,6 +77,7 @@ struct mot_pap {
 	uint16_t last_pos;
 	uint32_t half_pulses;			// counts steps from the last call to supervisor task
 	uint16_t offset;
+	int32_t half_steps_left;
 };
 
 uint16_t mot_pap_offset_correction(uint16_t pos, uint16_t offset,

@@ -14,7 +14,7 @@
 #include "tmr.h"
 
 // Frequencies expressed in Khz
-static const uint32_t mot_pap_free_run_freqs[] = { 0, 25, 25, 25, 50, 75, 75,
+static const uint32_t mot_pap_free_run_freqs[] = { 0, 5, 15, 25, 50, 75, 75,
 		100, 125 };
 
 
@@ -127,6 +127,7 @@ void mot_pap_supervise(struct mot_pap *me)
 			}
 		}
 	}
+
 	cont: me->last_pos = me->posAct;
 }
 
@@ -159,6 +160,31 @@ void mot_pap_move_free_run(struct mot_pap *me, enum mot_pap_direction direction,
 		lDebug(Warn, "%s: chosen speed out of bounds %u", me->name, speed);
 	}
 }
+
+void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
+		uint32_t speed, uint32_t steps)
+{
+	if (mot_pap_free_run_speed_ok(speed)) {
+		if ((me->dir != direction) && (me->type != MOT_PAP_TYPE_STOP)) {
+			tmr_stop(&(me->tmr));
+			vTaskDelay(pdMS_TO_TICKS(MOT_PAP_DIRECTION_CHANGE_DELAY_MS));
+		}
+		me->type = MOT_PAP_TYPE_STEPS;
+		me->dir = direction;
+		me->half_steps_left = steps << 1;
+		me->gpios.direction(me->dir);
+		me->freq = mot_pap_free_run_freqs[speed] * 1000;
+
+		tmr_stop(&(me->tmr));
+		tmr_set_freq(&(me->tmr), me->freq);
+		tmr_start(&(me->tmr));
+		lDebug(Info, "%s: STEPS RUN, speed: %u, direction: %s", me->name,
+				me->freq, me->dir == MOT_PAP_DIRECTION_CW ? "CW" : "CCW");
+	} else {
+		lDebug(Warn, "%s: chosen speed out of bounds %u", me->name, speed);
+	}
+}
+
 
 /**
  * @brief	if allowed, starts a closed loop movement
@@ -223,6 +249,16 @@ void mot_pap_isr(struct mot_pap *me)
 	if (me->dir != me->last_dir) {
 		me->half_pulses = 0;
 		me->last_dir = me->dir;
+	}
+
+	if (me->type == MOT_PAP_TYPE_STEPS) {
+		if (me->half_steps_left <= 0) {
+			me->already_there = true;
+			me->type = MOT_PAP_TYPE_STOP;
+			tmr_stop(&(me->tmr));
+			return;
+		}
+		--me->half_steps_left;
 	}
 
 	me->gpios.pulse();
