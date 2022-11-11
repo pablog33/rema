@@ -13,13 +13,14 @@
 
 #define PROTOCOL_VERSION  	"JSON_1.0"
 
-extern QueueHandle_t x_axis_queue;
+extern QueueHandle_t mot_pap_queue;
 
 bool stall_detection = true;
 extern int count_z;
 extern int count_b;
 extern int count_a;
 
+extern struct mot_pap x_axis;
 
 typedef struct {
 	char *cmd_name;
@@ -125,15 +126,16 @@ JSON_Value* arm_free_run_cmd(JSON_Value const *pars)
 
 		if (dir && speed != 0) {
 
-			struct mot_pap_msg *pArmMsg = (struct mot_pap_msg*) pvPortMalloc(
+			struct mot_pap_msg *msg = (struct mot_pap_msg*) pvPortMalloc(
 					sizeof(struct mot_pap_msg));
 
-			pArmMsg->type = MOT_PAP_TYPE_FREE_RUNNING;
-			pArmMsg->free_run_direction = (
+			msg->axis = &x_axis;
+			msg->type = MOT_PAP_TYPE_FREE_RUNNING;
+			msg->free_run_direction = (
 					strcmp(dir, "CW") == 0 ?
 							MOT_PAP_DIRECTION_CW : MOT_PAP_DIRECTION_CCW);
-			pArmMsg->free_run_speed = (int) speed;
-			if (xQueueSend(x_axis_queue, &pArmMsg, portMAX_DELAY) == pdPASS) {
+			msg->free_run_speed = (int) speed;
+			if (xQueueSend(mot_pap_queue, &msg, portMAX_DELAY) == pdPASS) {
 				lDebug(Debug, " Comando enviado a arm.c exitoso!");
 			}
 
@@ -158,16 +160,17 @@ JSON_Value* arm_free_run_steps_cmd(JSON_Value const *pars)
 
 		if (dir && speed != 0) {
 
-			struct mot_pap_msg *pArmMsg = (struct mot_pap_msg*) pvPortMalloc(
+			struct mot_pap_msg *msg = (struct mot_pap_msg*) pvPortMalloc(
 					sizeof(struct mot_pap_msg));
 
-			pArmMsg->type = MOT_PAP_TYPE_STEPS;
-			pArmMsg->free_run_direction = (
+			msg->axis = &x_axis;
+			msg->type = MOT_PAP_TYPE_STEPS;
+			msg->free_run_direction = (
 					strcmp(dir, "CW") == 0 ?
 							MOT_PAP_DIRECTION_CW : MOT_PAP_DIRECTION_CCW);
-			pArmMsg->free_run_speed = (int) speed;
-			pArmMsg->steps = (int) steps;
-			if (xQueueSend(x_axis_queue, &pArmMsg, portMAX_DELAY) == pdPASS) {
+			msg->free_run_speed = (int) speed;
+			msg->steps = (int) steps;
+			if (xQueueSend(mot_pap_queue, &msg, portMAX_DELAY) == pdPASS) {
 				lDebug(Debug, " Comando enviado a arm.c exitoso!");
 			}
 
@@ -183,11 +186,12 @@ JSON_Value* arm_free_run_steps_cmd(JSON_Value const *pars)
 
 JSON_Value* arm_stop_cmd(JSON_Value const *pars)
 {
-	struct mot_pap_msg *pArmMsg = (struct mot_pap_msg*) pvPortMalloc(
+	struct mot_pap_msg *msg = (struct mot_pap_msg*) pvPortMalloc(
 			sizeof(struct mot_pap_msg));
 
-	pArmMsg->type = MOT_PAP_TYPE_STOP;
-	if (xQueueSend(x_axis_queue, &pArmMsg, portMAX_DELAY) == pdPASS) {
+	msg->axis = &x_axis;
+	msg->type = MOT_PAP_TYPE_STOP;
+	if (xQueueSend(mot_pap_queue, &msg, portMAX_DELAY) == pdPASS) {
 		lDebug(Debug, " Comando enviado a arm.c exitoso!");
 	}
 	JSON_Value *ans = json_value_init_object();
@@ -205,14 +209,14 @@ JSON_Value* pole_free_run_cmd(JSON_Value const *pars)
 
 		if (dir && speed != 0) {
 
-			struct mot_pap_msg *pPoleMsg = (struct mot_pap_msg*) pvPortMalloc(
+			struct mot_pap_msg *msg = (struct mot_pap_msg*) pvPortMalloc(
 					sizeof(struct mot_pap_msg));
-
-			pPoleMsg->type = MOT_PAP_TYPE_FREE_RUNNING;
-			pPoleMsg->free_run_direction = (
+			msg->axis = &x_axis;
+			msg->type = MOT_PAP_TYPE_FREE_RUNNING;
+			msg->free_run_direction = (
 					strcmp(dir, "CW") == 0 ?
 							MOT_PAP_DIRECTION_CW : MOT_PAP_DIRECTION_CCW);
-			pPoleMsg->free_run_speed = (int) speed;
+			msg->free_run_speed = (int) speed;
 //			if (xQueueSend(pole_queue, &pPoleMsg, portMAX_DELAY) == pdPASS) {
 //				lDebug(Debug, " Comando enviado a pole.c exitoso!");
 //			}

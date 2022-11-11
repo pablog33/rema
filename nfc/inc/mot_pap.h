@@ -45,6 +45,7 @@ struct mot_pap_msg {
 	uint32_t free_run_speed;
 	uint16_t closed_loop_setpoint;
 	uint32_t steps;
+	struct mot_pap *axis;
 };
 
 /**
@@ -64,26 +65,26 @@ struct mot_pap {
 	char *name;
 	enum mot_pap_type type;
 	enum mot_pap_direction dir;
-	uint16_t posCmd;
-	uint16_t posAct;
+	int32_t posAct;
+	int32_t posCmd;
+	int32_t posCmdMiddle;
 	int32_t requested_freq;
 	int32_t freq_increment;
 	int32_t current_freq;
 	bool stalled;
 	bool already_there;
-	uint16_t stalled_counter;
+	uint32_t stalled_counter;
 	struct ad2s1210 *rdc;
-	SemaphoreHandle_t supervisor_semaphore;
 	struct mot_pap_gpios gpios;
 	struct tmr tmr;
 	enum mot_pap_direction last_dir;
-	uint16_t last_pos;
-	uint32_t half_pulses;			// counts steps from the last call to supervisor task
-	uint16_t offset;
+	int32_t last_pos;
+	int32_t half_pulses;			// counts steps from the last call to supervisor task
+	int32_t offset;
 	int32_t half_steps_requested;
 	int32_t half_steps_curr;
 	int32_t half_steps_to_middle;
-	int32_t max_speed_reached_steps;
+	int32_t max_speed_reached_distance;
 	int32_t ticks_last_time;
 	bool max_speed_reached;
 };
@@ -93,7 +94,7 @@ uint16_t mot_pap_offset_correction(uint16_t pos, uint16_t offset,
 
 void mot_pap_read_corrected_pos(struct mot_pap *me);
 
-void mot_pap_supervise(struct mot_pap *me);
+void mot_pap_isr_helper_task();
 
 void mot_pap_move_free_run(struct mot_pap *me, enum mot_pap_direction direction,
 		uint32_t speed);
