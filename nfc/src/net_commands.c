@@ -297,6 +297,10 @@ const cmd_entry cmds_table[] = {
 				axis_free_run_cmd,
 		},
 		{
+				"AXIS_FREE_RUN_STEPS",
+				axis_free_run_steps_cmd,
+		},
+		{
 				"AXIS_CLOSED_LOOP",
 				axis_closed_loop_cmd,
 		},
@@ -319,10 +323,6 @@ const cmd_entry cmds_table[] = {
 		{
 				"TEMPERATURE_INFO",
 				temperature_info_cmd,
-		},
-		{
-				"AXIS_FREE_RUN_STEPS",
-				axis_free_run_steps_cmd,
 		},
 };
 // @formatter:on
