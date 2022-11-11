@@ -80,11 +80,3 @@ struct mot_pap *x_axis_get_status(void)
 	mot_pap_read_corrected_pos(&x_axis);
 	return &x_axis;
 }
-
-/**
- * @brief	returns status of the x_axis task in json format.
- * @returns pointer to JSON_Value
- */
-JSON_Value *x_axis_json(void) {
-	return mot_pap_json(&x_axis);
-}

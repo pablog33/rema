@@ -89,6 +89,8 @@ struct mot_pap {
 	bool max_speed_reached;
 };
 
+void mot_pap_init();
+
 uint16_t mot_pap_offset_correction(uint16_t pos, uint16_t offset,
 		uint8_t resolution);
 
@@ -100,6 +102,9 @@ void mot_pap_move_free_run(struct mot_pap *me, enum mot_pap_direction direction,
 		uint32_t speed);
 
 void mot_pap_move_closed_loop(struct mot_pap *status, uint16_t setpoint);
+
+void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
+		uint32_t speed, uint32_t steps);
 
 void mot_pap_stop(struct mot_pap *me);
 

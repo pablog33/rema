@@ -22,6 +22,7 @@ QueueHandle_t mot_pap_queue = NULL;
 static const uint32_t mot_pap_free_run_freqs[] = { 0, 5, 15, 25, 50, 75, 75,
 		100, 125 };
 
+#define MOT_PAP_TASK_PRIORITY ( configMAX_PRIORITIES - 1 )
 #define MOT_PAP_HELPER_TASK_PRIORITY ( configMAX_PRIORITIES - 3)
 QueueHandle_t mot_pap_isr_helper_task_queue = NULL;
 
@@ -72,17 +73,21 @@ static void mot_pap_task(void *par)
 
 
 void mot_pap_init() {
-
 	mot_pap_queue = xQueueCreate(5, sizeof(struct mot_pap_msg*));
 
 	mot_pap_isr_helper_task_queue = xQueueCreate(1, sizeof(struct mot_pap*));
-
 	if (mot_pap_isr_helper_task_queue != NULL) {
 		// Create the 'handler' task, which is the task to which interrupt processing is deferred
 		xTaskCreate(mot_pap_isr_helper_task, "MotPaPHelper", 2048,
 		NULL, MOT_PAP_HELPER_TASK_PRIORITY, NULL);
 		lDebug(Info, "mot_pap: helper task created");
 	}
+
+	xTaskCreate(mot_pap_task, "mot_pap", 512, NULL,
+	MOT_PAP_TASK_PRIORITY, NULL);
+
+	lDebug(Info, "mot_pap: task created");
+
 }
 
 /**
@@ -265,13 +270,15 @@ void mot_pap_isr(struct mot_pap *me) {
 	}
 
 	bool already_there = false;
-	if (me->type == MOT_PAP_TYPE_STEPS)
+	if (me->type == MOT_PAP_TYPE_STEPS) {
 		me->already_there = (me->half_steps_curr >= me->half_steps_requested);
+	}
 
 	int error;
-	if (me->type == MOT_PAP_TYPE_CLOSED_LOOP)
+	if (me->type == MOT_PAP_TYPE_CLOSED_LOOP) {
 		error = me->posCmd - me->posAct;
-	me->already_there = (abs((int) error) < MOT_PAP_POS_THRESHOLD);
+		me->already_there = (abs((int) error) < MOT_PAP_POS_THRESHOLD);
+	}
 
 	if (me->already_there) {
 		me->type = MOT_PAP_TYPE_STOP;

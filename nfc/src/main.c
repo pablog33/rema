@@ -54,7 +54,7 @@ static void prvSetupHardware(void)
 	settings_init();
 	//settings_erase();
 	relay_init();
-
+	mot_pap_init();
 	x_axis_init();
 	//temperature_init();
 	//temperature_ds18b20_init();
@@ -84,8 +84,7 @@ void msDelay(uint32_t ms)
  * @returns	function should not exit
  */
 int main(void)
-{
-	debugLocalSetLevel(Info);
+{	debugLocalSetLevel(Info);
 	debugNetSetLevel(Error);
 
 	prvSetupHardware();
