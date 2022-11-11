@@ -71,14 +71,14 @@ struct mot_pap {
 	int32_t requested_freq;
 	int32_t freq_increment;
 	int32_t current_freq;
-	bool stalled;
 	bool already_there;
+	bool stalled;
+	int32_t last_pos;
 	uint32_t stalled_counter;
 	struct ad2s1210 *rdc;
 	struct mot_pap_gpios gpios;
 	struct tmr tmr;
 	enum mot_pap_direction last_dir;
-	int32_t last_pos;
 	int32_t half_pulses;			// counts steps from the last call to supervisor task
 	int32_t offset;
 	int32_t half_steps_requested;
@@ -111,6 +111,9 @@ void mot_pap_stop(struct mot_pap *me);
 void mot_pap_isr(struct mot_pap *me);
 
 void mot_pap_update_position(struct mot_pap *me);
+
+void mot_pap_set_offset(struct mot_pap *me, uint16_t offset);
+
 uint32_t mot_pap_read_on_condition(void);
 
 JSON_Value *mot_pap_json(struct mot_pap *me);

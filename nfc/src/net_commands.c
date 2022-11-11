@@ -10,6 +10,7 @@
 #include "json_wp.h"
 #include "settings.h"
 #include "temperature_ds18b20.h"
+#include "relay.h"
 
 #define PROTOCOL_VERSION  	"JSON_1.0"
 
@@ -34,8 +35,7 @@ JSON_Value* telemetria_cmd(JSON_Value const *pars)
 	json_object_set_number(json_value_get_object(ans), "cuentas B", count_b);
 	json_object_set_number(json_value_get_object(ans), "cuentas Z", count_a);
 
-	json_object_set_value(json_value_get_object(ans), "eje_x", mot_pap_json(&x_axis));
-
+	//json_object_set_value(json_value_get_object(ans), "eje_x", mot_pap_json(&x_axis));
 
 	return ans;
 
@@ -73,13 +73,6 @@ JSON_Value* logs_cmd(JSON_Value const *pars)
 	return NULL;
 }
 
-JSON_Value* lift_cmd(JSON_Value const *pars)
-{
-	lDebug(Info, "LLAMADA lift_up_cmd");
-	JSON_Value *ans = json_value_init_object();
-	return ans;
-}
-
 JSON_Value* protocol_version_cmd(JSON_Value const *pars)
 {
 	JSON_Value *ans = json_value_init_object();
@@ -111,16 +104,16 @@ JSON_Value* stall_control_cmd(JSON_Value const *pars)
 	return ans;
 }
 
-JSON_Value* pole_closed_loop_cmd(JSON_Value const *pars)
+JSON_Value* axis_closed_loop_cmd(JSON_Value const *pars)
 {
-	lDebug(Info, "LLAMADA pole_closed_loop_cmd");
+	lDebug(Info, "LLAMADA axis_closed_loop_cmd");
 
 	JSON_Value *ans = json_value_init_object();
 	json_object_set_boolean(json_value_get_object(ans), "ACK", true);
 	return ans;
 }
 
-JSON_Value* arm_free_run_cmd(JSON_Value const *pars)
+JSON_Value* axis_free_run_cmd(JSON_Value const *pars)
 {
 	if (pars && json_value_get_type(pars) == JSONObject) {
 		char const *dir = json_object_get_string(json_value_get_object(pars),
@@ -152,7 +145,7 @@ JSON_Value* arm_free_run_cmd(JSON_Value const *pars)
 	return NULL;
 }
 
-JSON_Value* arm_free_run_steps_cmd(JSON_Value const *pars)
+JSON_Value* axis_free_run_steps_cmd(JSON_Value const *pars)
 {
 	if (pars && json_value_get_type(pars) == JSONObject) {
 		char const *dir = json_object_get_string(json_value_get_object(pars),
@@ -188,7 +181,7 @@ JSON_Value* arm_free_run_steps_cmd(JSON_Value const *pars)
 }
 
 
-JSON_Value* arm_stop_cmd(JSON_Value const *pars)
+JSON_Value* axis_stop_cmd(JSON_Value const *pars)
 {
 	struct mot_pap_msg *msg = (struct mot_pap_msg*) pvPortMalloc(
 			sizeof(struct mot_pap_msg));
@@ -201,37 +194,6 @@ JSON_Value* arm_stop_cmd(JSON_Value const *pars)
 	JSON_Value *ans = json_value_init_object();
 	json_object_set_boolean(json_value_get_object(ans), "ACK", true);
 	return ans;
-}
-
-JSON_Value* pole_free_run_cmd(JSON_Value const *pars)
-{
-	if (pars && json_value_get_type(pars) == JSONObject) {
-		char const *dir = json_object_get_string(json_value_get_object(pars),
-				"dir");
-		double speed = json_object_get_number(json_value_get_object(pars),
-				"speed");
-
-		if (dir && speed != 0) {
-
-			struct mot_pap_msg *msg = (struct mot_pap_msg*) pvPortMalloc(
-					sizeof(struct mot_pap_msg));
-			msg->axis = &x_axis;
-			msg->type = MOT_PAP_TYPE_FREE_RUNNING;
-			msg->free_run_direction = (
-					strcmp(dir, "CW") == 0 ?
-							MOT_PAP_DIRECTION_CW : MOT_PAP_DIRECTION_CCW);
-			msg->free_run_speed = (int) speed;
-//			if (xQueueSend(pole_queue, &pPoleMsg, portMAX_DELAY) == pdPASS) {
-//				lDebug(Debug, " Comando enviado a pole.c exitoso!");
-//			}
-//
-//			lDebug(Info, "POLE_FREE_RUN DIR: %s, SPEED: %d", dir, (int ) speed);
-		}
-		JSON_Value *ans = json_value_init_object();
-		json_object_set_boolean(json_value_get_object(ans), "ACK", true);
-		return ans;
-	}
-	return NULL;
 }
 
 JSON_Value* network_settings_cmd(JSON_Value const *pars)
@@ -323,24 +285,20 @@ const cmd_entry cmds_table[] = {
 				control_enable_cmd,
 		},
 		{
-				"LIFT_UP",
-				lift_cmd,
-		},
-		{
-				"POLE_CLOSED_LOOP",
-				pole_closed_loop_cmd,
-		},
-		{
 				"STALL_CONTROL",
 				stall_control_cmd,
 		},
 		{
-				"ARM_FREE_RUN",
-				arm_free_run_cmd,
+				"AXIS_STOP",
+				axis_stop_cmd,
 		},
 		{
-				"POLE_FREE_RUN",
-				pole_free_run_cmd,
+				"AXIS_FREE_RUN",
+				axis_free_run_cmd,
+		},
+		{
+				"AXIS_CLOSED_LOOP",
+				axis_closed_loop_cmd,
 		},
 		{
 				"TELEMETRIA",
@@ -363,16 +321,12 @@ const cmd_entry cmds_table[] = {
 				temperature_info_cmd,
 		},
 		{
-				"ARM_FREE_RUN_STEPS",
-				arm_free_run_steps_cmd,
+				"AXIS_FREE_RUN_STEPS",
+				axis_free_run_steps_cmd,
 		},
-		{
-				"ARM_STOP",
-				arm_stop_cmd,
-		},
-
 };
 // @formatter:on
+
 /**
  * @brief 	searchs for a matching command name in cmds_table[], passing the parameters
  * 			as a JSON object for the called function to parse them.

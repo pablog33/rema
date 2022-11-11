@@ -15,12 +15,6 @@ void TIMER1_IRQHandler(void);
 
 void x_axis_init();
 
-struct mot_pap *x_axis_get_status(void);
-
-void x_axis_set_offset(uint16_t offset);
-
-JSON_Value *x_axis_json(void);
-
 #ifdef __cplusplus
 }
 #endif

@@ -32,15 +32,14 @@ QueueHandle_t mot_pap_isr_helper_task_queue = NULL;
  * @returns	never
  * @note	Receives commands from x_axis_queue
  */
-static void mot_pap_task(void *par)
-{
+static void mot_pap_task(void *par) {
 	struct mot_pap_msg *msg_rcv;
 
 	while (true) {
 		if (xQueueReceive(mot_pap_queue, &msg_rcv, portMAX_DELAY) == pdPASS) {
 			lDebug(Info, "%s command received", msg_rcv->axis->name);
 
-			msg_rcv->axis->stalled = false; 		// If a new command was received, assume we are not stalled
+			msg_rcv->axis->stalled = false; // If a new command was received, assume we are not stalled
 			msg_rcv->axis->stalled_counter = 0;
 			msg_rcv->axis->already_there = false;
 
@@ -48,16 +47,18 @@ static void mot_pap_task(void *par)
 
 			switch (msg_rcv->type) {
 			case MOT_PAP_TYPE_FREE_RUNNING:
-				mot_pap_move_free_run(msg_rcv->axis, msg_rcv->free_run_direction,
-						msg_rcv->free_run_speed);
+				mot_pap_move_free_run(msg_rcv->axis,
+						msg_rcv->free_run_direction, msg_rcv->free_run_speed);
 				break;
 
 			case MOT_PAP_TYPE_CLOSED_LOOP:
-				mot_pap_move_closed_loop(msg_rcv->axis, msg_rcv->closed_loop_setpoint);
+				mot_pap_move_closed_loop(msg_rcv->axis,
+						msg_rcv->closed_loop_setpoint);
 				break;
 
 			case MOT_PAP_TYPE_STEPS:
-				mot_pap_move_steps(msg_rcv->axis, msg_rcv->free_run_direction, msg_rcv->free_run_speed, msg_rcv->steps);
+				mot_pap_move_steps(msg_rcv->axis, msg_rcv->free_run_direction,
+						msg_rcv->free_run_speed, msg_rcv->steps);
 				break;
 
 			default:
@@ -70,7 +71,6 @@ static void mot_pap_task(void *par)
 		}
 	}
 }
-
 
 void mot_pap_init() {
 	mot_pap_queue = xQueueCreate(5, sizeof(struct mot_pap_msg*));
@@ -119,7 +119,7 @@ void mot_pap_isr_helper_task() {
 	while (true) {
 		struct mot_pap *me;
 		if (xQueueReceive(mot_pap_isr_helper_task_queue, &me,
-				portMAX_DELAY) == pdPASS) {
+		portMAX_DELAY) == pdPASS) {
 			if (me->stalled)
 				lDebug(Warn, "%s: stalled", me->name);
 
@@ -269,7 +269,6 @@ void mot_pap_isr(struct mot_pap *me) {
 		}
 	}
 
-	bool already_there = false;
 	if (me->type == MOT_PAP_TYPE_STEPS) {
 		me->already_there = (me->half_steps_curr >= me->half_steps_requested);
 	}
@@ -297,70 +296,89 @@ void mot_pap_isr(struct mot_pap *me) {
 					> (me->half_steps_to_middle);
 
 		if (me->type == MOT_PAP_TYPE_CLOSED_LOOP)
-				first_half_passed = (me->dir == MOT_PAP_DIRECTION_CW) ? me->posAct > (me->posCmdMiddle) : me->posAct < (me->posCmdMiddle);
+			first_half_passed =
+					(me->dir == MOT_PAP_DIRECTION_CW) ?
+							me->posAct > (me->posCmdMiddle) :
+							me->posAct < (me->posCmdMiddle);
 
-				if (!me->max_speed_reached && (!first_half_passed)) {
-					me->current_freq += (me->freq_increment);
-					if (me->current_freq >= MOT_PAP_MAX_FREQ) {
-						me->current_freq = MOT_PAP_MAX_FREQ;
-						me->max_speed_reached = true;
-						if (me->type == MOT_PAP_TYPE_STEPS)
-							me->max_speed_reached_distance =
-									me->half_steps_curr;
-
-						if (me->type == MOT_PAP_TYPE_CLOSED_LOOP)
-							me->max_speed_reached_distance = me->posAct;
-
-					}
-				}
-
-				int distance_left;
+		if (!me->max_speed_reached && (!first_half_passed)) {
+			me->current_freq += (me->freq_increment);
+			if (me->current_freq >= MOT_PAP_MAX_FREQ) {
+				me->current_freq = MOT_PAP_MAX_FREQ;
+				me->max_speed_reached = true;
 				if (me->type == MOT_PAP_TYPE_STEPS)
-					distance_left = me->half_steps_requested
-							- me->half_steps_curr;
+					me->max_speed_reached_distance = me->half_steps_curr;
 
 				if (me->type == MOT_PAP_TYPE_CLOSED_LOOP)
-					distance_left = me->posCmd - me->posAct;
+					me->max_speed_reached_distance = me->posAct;
 
-				if ((me->max_speed_reached
-						&& distance_left <= me->max_speed_reached_distance)
-						|| (!me->max_speed_reached && first_half_passed)) {
-					me->current_freq -= (me->freq_increment);
-					if (me->current_freq <= me->freq_increment) {
-						me->current_freq = me->freq_increment;
-					}
-				}
-
-				tmr_stop(&(me->tmr));
-				tmr_set_freq(&(me->tmr), me->current_freq);
-				tmr_start(&(me->tmr));
-				me->ticks_last_time = ticks_now;
 			}
+		}
 
-		++me->half_steps_curr;
+		int distance_left;
+		if (me->type == MOT_PAP_TYPE_STEPS)
+			distance_left = me->half_steps_requested - me->half_steps_curr;
 
-		gpio_toggle(me->gpios.step);
+		if (me->type == MOT_PAP_TYPE_CLOSED_LOOP)
+			distance_left = me->posCmd - me->posAct;
 
-		cont: me->last_pos = me->posAct;
+		if ((me->max_speed_reached
+				&& distance_left <= me->max_speed_reached_distance)
+				|| (!me->max_speed_reached && first_half_passed)) {
+			me->current_freq -= (me->freq_increment);
+			if (me->current_freq <= me->freq_increment) {
+				me->current_freq = me->freq_increment;
+			}
+		}
+
+		tmr_stop(&(me->tmr));
+		tmr_set_freq(&(me->tmr), me->current_freq);
+		tmr_start(&(me->tmr));
+		me->ticks_last_time = ticks_now;
 	}
 
-	/**
-	 * @brief 	updates the current position from RDC
-	 * @param 	me : struct mot_pap pointer
-	 */
-	void mot_pap_update_position(struct mot_pap *me) {
-	}
+	++me->half_steps_curr;
 
-	JSON_Value* mot_pap_json(struct mot_pap *me) {
-		JSON_Value *ans = json_value_init_object();
-		json_object_set_number(json_value_get_object(ans), "posCmd",
-				me->posCmd);
-		json_object_set_number(json_value_get_object(ans), "posAct",
-				me->posAct);
-		json_object_set_boolean(json_value_get_object(ans), "stalled",
-				me->stalled);
-		json_object_set_number(json_value_get_object(ans), "offset",
-				me->offset);
-		return ans;
-	}
+	gpio_toggle(me->gpios.step);
+
+	cont: me->last_pos = me->posAct;
+}
+
+/**
+ * @brief 	updates the current position from encoder
+ * @param 	me : struct mot_pap pointer
+ */
+void mot_pap_update_position(struct mot_pap *me) {
+//	me->posAct = count_a;
+}
+
+/**
+ * @brief	sets axis offset
+ * @param 	offset		: RDC position for 0 degrees
+ * @returns	nothing
+ */
+void mot_pap_set_offset(struct mot_pap *me, uint16_t offset)
+{
+	me->offset = offset;
+}
+
+/**
+ * @brief	returns status of the X axis task.
+ * @returns copy of status structure of the task
+ */
+struct mot_pap *mot_pap_get_status(struct mot_pap *me)
+{
+	mot_pap_read_corrected_pos(me);
+	return me;
+}
+
+
+JSON_Value* mot_pap_json(struct mot_pap *me) {
+	JSON_Value *ans = json_value_init_object();
+	json_object_set_number(json_value_get_object(ans), "posCmd", me->posCmd);
+	json_object_set_number(json_value_get_object(ans), "posAct", me->posAct);
+	json_object_set_boolean(json_value_get_object(ans), "stalled", me->stalled);
+	json_object_set_number(json_value_get_object(ans), "offset", me->offset);
+	return ans;
+}
 

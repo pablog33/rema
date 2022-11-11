@@ -59,24 +59,3 @@ void TIMER1_IRQHandler(void)
 		mot_pap_isr(&x_axis);
 	}
 }
-
-
-/**
- * @brief	sets X axis offset
- * @param 	offset		: RDC position for 0 degrees
- * @returns	nothing
- */
-void x_axis_set_offset(uint16_t offset)
-{
-	x_axis.offset = offset;
-}
-
-/**
- * @brief	returns status of the X axis task.
- * @returns copy of status structure of the task
- */
-struct mot_pap *x_axis_get_status(void)
-{
-	mot_pap_read_corrected_pos(&x_axis);
-	return &x_axis;
-}
