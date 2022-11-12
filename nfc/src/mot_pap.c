@@ -16,65 +16,14 @@
 extern bool stall_detection;
 extern int count_a;
 
-QueueHandle_t mot_pap_queue = NULL;
-
 // Frequencies expressed in Khz
-static const uint32_t mot_pap_free_run_freqs[] = { 0, 5, 15, 25, 50, 75, 75,
-		100, 125 };
+static const uint32_t mot_pap_free_run_freqs[] = { 0, 5, 15, 25, 50, 75, 100, 125 };
 
 #define MOT_PAP_TASK_PRIORITY ( configMAX_PRIORITIES - 1 )
 #define MOT_PAP_HELPER_TASK_PRIORITY ( configMAX_PRIORITIES - 3)
 QueueHandle_t mot_pap_isr_helper_task_queue = NULL;
 
-/**
- * @brief 	handles the X axis movement.
- * @param 	par		: unused
- * @returns	never
- * @note	Receives commands from x_axis_queue
- */
-static void mot_pap_task(void *par) {
-	struct mot_pap_msg *msg_rcv;
-
-	while (true) {
-		if (xQueueReceive(mot_pap_queue, &msg_rcv, portMAX_DELAY) == pdPASS) {
-			lDebug(Info, "%s command received", msg_rcv->axis->name);
-
-			msg_rcv->axis->stalled = false; // If a new command was received, assume we are not stalled
-			msg_rcv->axis->stalled_counter = 0;
-			msg_rcv->axis->already_there = false;
-
-			//mot_pap_read_corrected_pos(&x_axis);
-
-			switch (msg_rcv->type) {
-			case MOT_PAP_TYPE_FREE_RUNNING:
-				mot_pap_move_free_run(msg_rcv->axis,
-						msg_rcv->free_run_direction, msg_rcv->free_run_speed);
-				break;
-
-			case MOT_PAP_TYPE_CLOSED_LOOP:
-				mot_pap_move_closed_loop(msg_rcv->axis,
-						msg_rcv->closed_loop_setpoint);
-				break;
-
-			case MOT_PAP_TYPE_STEPS:
-				mot_pap_move_steps(msg_rcv->axis, msg_rcv->free_run_direction,
-						msg_rcv->free_run_speed, msg_rcv->steps);
-				break;
-
-			default:
-				mot_pap_stop(msg_rcv->axis);
-				break;
-			}
-
-			vPortFree(msg_rcv);
-			msg_rcv = NULL;
-		}
-	}
-}
-
 void mot_pap_init() {
-	mot_pap_queue = xQueueCreate(5, sizeof(struct mot_pap_msg*));
-
 	mot_pap_isr_helper_task_queue = xQueueCreate(1, sizeof(struct mot_pap*));
 	if (mot_pap_isr_helper_task_queue != NULL) {
 		// Create the 'handler' task, which is the task to which interrupt processing is deferred
@@ -82,12 +31,6 @@ void mot_pap_init() {
 		NULL, MOT_PAP_HELPER_TASK_PRIORITY, NULL);
 		lDebug(Info, "mot_pap: helper task created");
 	}
-
-	xTaskCreate(mot_pap_task, "mot_pap", 512, NULL,
-	MOT_PAP_TASK_PRIORITY, NULL);
-
-	lDebug(Info, "mot_pap: task created");
-
 }
 
 /**
@@ -140,6 +83,10 @@ void mot_pap_isr_helper_task() {
 void mot_pap_move_free_run(struct mot_pap *me, enum mot_pap_direction direction,
 		uint32_t speed) {
 	if (mot_pap_free_run_speed_ok(speed)) {
+		me->stalled = false; // If a new command was received, assume we are not stalled
+		me->stalled_counter = 0;
+		me->already_there = false;
+
 		if ((me->dir != direction) && (me->type != MOT_PAP_TYPE_STOP)) {
 			tmr_stop(&(me->tmr));
 			vTaskDelay(pdMS_TO_TICKS(MOT_PAP_DIRECTION_CHANGE_DELAY_MS));
@@ -163,6 +110,10 @@ void mot_pap_move_free_run(struct mot_pap *me, enum mot_pap_direction direction,
 void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
 		uint32_t speed, uint32_t steps) {
 	if (mot_pap_free_run_speed_ok(speed)) {
+		me->stalled = false; // If a new command was received, assume we are not stalled
+		me->stalled_counter = 0;
+		me->already_there = false;
+
 		if ((me->dir != direction) && (me->type != MOT_PAP_TYPE_STOP)) {
 			tmr_stop(&(me->tmr));
 			vTaskDelay(pdMS_TO_TICKS(MOT_PAP_DIRECTION_CHANGE_DELAY_MS));
@@ -198,8 +149,9 @@ void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
  */
 void mot_pap_move_closed_loop(struct mot_pap *me, uint16_t setpoint) {
 	int32_t error;
-	bool already_there;
 	enum mot_pap_direction dir;
+	me->stalled = false; // If a new command was received, assume we are not stalled
+	me->stalled_counter = 0;
 
 	me->posCmd = setpoint;
 	lDebug(Info, "%s: CLOSED_LOOP posCmd: %u posAct: %u", me->name, me->posCmd,
@@ -207,10 +159,9 @@ void mot_pap_move_closed_loop(struct mot_pap *me, uint16_t setpoint) {
 
 	//calculate position error
 	error = me->posCmd - me->posAct;
-	already_there = (abs(error) < MOT_PAP_POS_THRESHOLD);
+	me->already_there = (abs(error) < MOT_PAP_POS_THRESHOLD);
 
-	if (already_there) {
-		me->already_there = true;
+	if (me->already_there) {
 		tmr_stop(&(me->tmr));
 		lDebug(Info, "%s: already there", me->name);
 	} else {

@@ -75,7 +75,6 @@ struct mot_pap {
 	bool stalled;
 	int32_t last_pos;
 	uint32_t stalled_counter;
-	struct ad2s1210 *rdc;
 	struct mot_pap_gpios gpios;
 	struct tmr tmr;
 	enum mot_pap_direction last_dir;

@@ -123,18 +123,9 @@ JSON_Value* axis_free_run_cmd(JSON_Value const *pars)
 
 		if (dir && speed != 0) {
 
-			struct mot_pap_msg *msg = (struct mot_pap_msg*) pvPortMalloc(
-					sizeof(struct mot_pap_msg));
-
-			msg->axis = &x_axis;
-			msg->type = MOT_PAP_TYPE_FREE_RUNNING;
-			msg->free_run_direction = (
-					strcmp(dir, "CW") == 0 ?
-							MOT_PAP_DIRECTION_CW : MOT_PAP_DIRECTION_CCW);
-			msg->free_run_speed = (int) speed;
-			if (xQueueSend(mot_pap_queue, &msg, portMAX_DELAY) == pdPASS) {
-				lDebug(Debug, " Comando enviado a arm.c exitoso!");
-			}
+			enum mot_pap_direction direction = strcmp(dir, "CW") == 0 ?
+					MOT_PAP_DIRECTION_CW : MOT_PAP_DIRECTION_CCW;
+			mot_pap_move_free_run(&x_axis, direction, (int)speed);
 
 			lDebug(Info, "ARM_FREE_RUN DIR: %s, SPEED: %d", dir, (int ) speed);
 		}
@@ -157,19 +148,9 @@ JSON_Value* axis_free_run_steps_cmd(JSON_Value const *pars)
 
 		if (dir && speed != 0) {
 
-			struct mot_pap_msg *msg = (struct mot_pap_msg*) pvPortMalloc(
-					sizeof(struct mot_pap_msg));
-
-			msg->axis = &x_axis;
-			msg->type = MOT_PAP_TYPE_STEPS;
-			msg->free_run_direction = (
-					strcmp(dir, "CW") == 0 ?
-							MOT_PAP_DIRECTION_CW : MOT_PAP_DIRECTION_CCW);
-			msg->free_run_speed = (int) speed;
-			msg->steps = (int) steps;
-			if (xQueueSend(mot_pap_queue, &msg, portMAX_DELAY) == pdPASS) {
-				lDebug(Debug, " Comando enviado a arm.c exitoso!");
-			}
+			enum mot_pap_direction direction = strcmp(dir, "CW") == 0 ?
+					MOT_PAP_DIRECTION_CW : MOT_PAP_DIRECTION_CCW;
+			mot_pap_move_steps(&x_axis, direction, (int)speed, (int)steps);
 
 			lDebug(Info, "ARM_FREE_RUN DIR: %s, SPEED: %d", dir, (int ) speed);
 		}
@@ -186,11 +167,7 @@ JSON_Value* axis_stop_cmd(JSON_Value const *pars)
 	struct mot_pap_msg *msg = (struct mot_pap_msg*) pvPortMalloc(
 			sizeof(struct mot_pap_msg));
 
-	msg->axis = &x_axis;
-	msg->type = MOT_PAP_TYPE_STOP;
-	if (xQueueSend(mot_pap_queue, &msg, portMAX_DELAY) == pdPASS) {
-		lDebug(Debug, " Comando enviado a arm.c exitoso!");
-	}
+	mot_pap_stop(&x_axis);
 	JSON_Value *ans = json_value_init_object();
 	json_object_set_boolean(json_value_get_object(ans), "ACK", true);
 	return ans;
