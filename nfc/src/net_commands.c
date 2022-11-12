@@ -127,7 +127,7 @@ JSON_Value* axis_free_run_cmd(JSON_Value const *pars)
 					MOT_PAP_DIRECTION_CW : MOT_PAP_DIRECTION_CCW;
 			mot_pap_move_free_run(&x_axis, direction, (int)speed);
 
-			lDebug(Info, "ARM_FREE_RUN DIR: %s, SPEED: %d", dir, (int ) speed);
+			lDebug(Info, "AXIS_FREE_RUN DIR: %s, SPEED: %d", dir, (int ) speed);
 		}
 		JSON_Value *ans = json_value_init_object();
 		json_object_set_boolean(json_value_get_object(ans), "ACK", true);
@@ -152,7 +152,7 @@ JSON_Value* axis_free_run_steps_cmd(JSON_Value const *pars)
 					MOT_PAP_DIRECTION_CW : MOT_PAP_DIRECTION_CCW;
 			mot_pap_move_steps(&x_axis, direction, (int)speed, (int)steps);
 
-			lDebug(Info, "ARM_FREE_RUN DIR: %s, SPEED: %d", dir, (int ) speed);
+			lDebug(Info, "AXIS_FREE_RUN DIR: %s, SPEED: %d", dir, (int ) speed);
 		}
 		JSON_Value *ans = json_value_init_object();
 		json_object_set_boolean(json_value_get_object(ans), "ACK", true);
@@ -164,9 +164,6 @@ JSON_Value* axis_free_run_steps_cmd(JSON_Value const *pars)
 
 JSON_Value* axis_stop_cmd(JSON_Value const *pars)
 {
-	struct mot_pap_msg *msg = (struct mot_pap_msg*) pvPortMalloc(
-			sizeof(struct mot_pap_msg));
-
 	mot_pap_stop(&x_axis);
 	JSON_Value *ans = json_value_init_object();
 	json_object_set_boolean(json_value_get_object(ans), "ACK", true);

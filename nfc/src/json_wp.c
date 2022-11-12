@@ -18,8 +18,9 @@
  *
  * {
 	"commands" : [
-					{"command": "ARM_FREE_RUN",
+					{"command": "AXIS_FREE_RUN",
 					 "pars": {
+					 	"axis": "X",
 						"dir": "CW",
 						"speed": 8
 						}

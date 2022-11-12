@@ -130,7 +130,7 @@ void vAssertCalled(unsigned long ulLine, const char *const pcFileName)
 
 	taskENTER_CRITICAL();
 	{
-		printf("[ASSERT] %s:%d\n", pcFileName, ulLine);
+		printf("[ASSERT] %s:%lu\n", pcFileName, ulLine);
 		/* You can step out of this function to debug the assertion by using
 		 the debugger to set ulSetToNonZeroInDebuggerToContinue to a non-zero
 		 value. */

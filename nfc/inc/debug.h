@@ -175,7 +175,7 @@ do { \
 		if (DEBUG_ENABLED && (debugLocalLevel <= level)) { \
 			if (uart_mutex != NULL) {	\
 				if (xSemaphoreTake(uart_mutex, portMAX_DELAY) == pdTRUE) { \
-					printf("%u - %s %s[%d] %s() " fmt "\n", xTaskGetTickCount(), \
+					printf("%lu - %s %s[%d] %s() " fmt "\n", xTaskGetTickCount(), \
 					levelText(level), __FILE__, __LINE__, __func__, ##__VA_ARGS__); \
 					xSemaphoreGive(uart_mutex); \
 				} \

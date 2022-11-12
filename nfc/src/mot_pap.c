@@ -81,7 +81,7 @@ void mot_pap_isr_helper_task() {
  * @returns	nothing
  */
 void mot_pap_move_free_run(struct mot_pap *me, enum mot_pap_direction direction,
-		uint32_t speed) {
+		int speed) {
 	if (mot_pap_free_run_speed_ok(speed)) {
 		me->stalled = false; // If a new command was received, assume we are not stalled
 		me->stalled_counter = 0;
@@ -99,16 +99,16 @@ void mot_pap_move_free_run(struct mot_pap *me, enum mot_pap_direction direction,
 		tmr_stop(&(me->tmr));
 		tmr_set_freq(&(me->tmr), me->requested_freq);
 		tmr_start(&(me->tmr));
-		lDebug(Info, "%s: FREE RUN, speed: %u, direction: %s", me->name,
+		lDebug(Info, "%s: FREE RUN, speed: %i, direction: %s", me->name,
 				me->requested_freq,
 				me->dir == MOT_PAP_DIRECTION_CW ? "CW" : "CCW");
 	} else {
-		lDebug(Warn, "%s: chosen speed out of bounds %u", me->name, speed);
+		lDebug(Warn, "%s: chosen speed out of bounds %i", me->name, speed);
 	}
 }
 
 void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
-		uint32_t speed, uint32_t steps) {
+		int speed, int steps) {
 	if (mot_pap_free_run_speed_ok(speed)) {
 		me->stalled = false; // If a new command was received, assume we are not stalled
 		me->stalled_counter = 0;
@@ -137,7 +137,7 @@ void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
 				me->requested_freq,
 				me->dir == MOT_PAP_DIRECTION_CW ? "CW" : "CCW");
 	} else {
-		lDebug(Warn, "%s: chosen speed out of bounds %u", me->name, speed);
+		lDebug(Warn, "%s: chosen speed out of bounds %i", me->name, speed);
 	}
 }
 
@@ -154,7 +154,7 @@ void mot_pap_move_closed_loop(struct mot_pap *me, uint16_t setpoint) {
 	me->stalled_counter = 0;
 
 	me->posCmd = setpoint;
-	lDebug(Info, "%s: CLOSED_LOOP posCmd: %u posAct: %u", me->name, me->posCmd,
+	lDebug(Info, "%s: CLOSED_LOOP posCmd: %i posAct: %i", me->name, me->posCmd,
 			me->posAct);
 
 	//calculate position error
