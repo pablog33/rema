@@ -29,7 +29,6 @@ void mot_pap_init() {
 		// Create the 'handler' task, which is the task to which interrupt processing is deferred
 		xTaskCreate(mot_pap_isr_helper_task, "MotPaPHelper", 2048,
 		NULL, MOT_PAP_HELPER_TASK_PRIORITY, NULL);
-		lDebug(Info, "mot_pap: helper task created");
 	}
 }
 
