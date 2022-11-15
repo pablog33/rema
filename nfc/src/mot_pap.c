@@ -123,7 +123,8 @@ void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
 		me->half_steps_requested = steps << 1;
 		gpio_set_pin_state(me->gpios.direction, me->dir);
 		me->requested_freq = mot_pap_free_run_freqs[speed] * 1000;
-		me->freq_increment = me->requested_freq / 100;
+		me->freq_increment = me->requested_freq / 10;
+		me->freq_decrement = me->requested_freq / 100;
 		me->current_freq = me->freq_increment;
 		me->half_steps_to_middle = me->half_steps_requested >> 1;
 		me->max_speed_reached = false;
@@ -238,7 +239,7 @@ void mot_pap_isr(struct mot_pap *me) {
 		return;
 	}
 
-	if ((ticks_now - me->ticks_last_time) > pdMS_TO_TICKS(50)) {
+	if ((ticks_now - me->ticks_last_time) > pdMS_TO_TICKS(25)) {
 
 		bool first_half_passed = false;
 		if (me->type == MOT_PAP_TYPE_STEPS)
@@ -253,8 +254,8 @@ void mot_pap_isr(struct mot_pap *me) {
 
 		if (!me->max_speed_reached && (!first_half_passed)) {
 			me->current_freq += (me->freq_increment);
-			if (me->current_freq >= MOT_PAP_MAX_FREQ) {
-				me->current_freq = MOT_PAP_MAX_FREQ;
+			if (me->current_freq >= me->requested_freq) {
+				me->current_freq = me->requested_freq;
 				me->max_speed_reached = true;
 				if (me->type == MOT_PAP_TYPE_STEPS)
 					me->max_speed_reached_distance = me->half_steps_curr;
@@ -273,11 +274,11 @@ void mot_pap_isr(struct mot_pap *me) {
 			distance_left = me->posCmd - me->posAct;
 
 		if ((me->max_speed_reached
-				&& distance_left <= me->max_speed_reached_distance)
+				&& distance_left <= 100*(me->max_speed_reached_distance))
 				|| (!me->max_speed_reached && first_half_passed)) {
-			me->current_freq -= (me->freq_increment);
-			if (me->current_freq <= me->freq_increment) {
-				me->current_freq = me->freq_increment;
+			me->current_freq -= (me->freq_decrement);
+			if (me->current_freq <= me->freq_decrement) {
+				me->current_freq = me->freq_decrement;
 			}
 		}
 

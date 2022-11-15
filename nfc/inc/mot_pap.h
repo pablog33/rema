@@ -70,6 +70,7 @@ struct mot_pap {
 	int32_t posCmdMiddle;
 	int32_t requested_freq;
 	int32_t freq_increment;
+	int32_t freq_decrement;
 	int32_t current_freq;
 	bool already_there;
 	bool stalled;
