@@ -123,10 +123,12 @@ void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
 		me->half_steps_requested = steps << 1;
 		gpio_set_pin_state(me->gpios.direction, me->dir);
 		me->requested_freq = mot_pap_free_run_freqs[speed] * 1000;
-		me->freq_increment = me->requested_freq / 10;
-		me->freq_decrement = me->requested_freq / 100;
+		me->freq_delta = me->requested_freq / 10;
+		me->freq_slope_relation_decr_to_incr = 3;
+		me->freq_increment = me->freq_slope_relation_incr_to_decr * me->freq_delta;
+		me->freq_decrement = me->freq_delta;
 		me->current_freq = me->freq_increment;
-		me->half_steps_to_middle = me->half_steps_requested >> 1;
+		me->half_steps_to_quarter = me->half_steps_requested >> 2;
 		me->max_speed_reached = false;
 		me->ticks_last_time = xTaskGetTickCount();
 
@@ -241,18 +243,18 @@ void mot_pap_isr(struct mot_pap *me) {
 
 	if ((ticks_now - me->ticks_last_time) > pdMS_TO_TICKS(25)) {
 
-		bool first_half_passed = false;
+		bool first_quarter_passed = false;
 		if (me->type == MOT_PAP_TYPE_STEPS)
-			first_half_passed = me->half_steps_curr
-					> (me->half_steps_to_middle);
+			first_quarter_passed = me->half_steps_curr
+					> (me->half_steps_to_quarter);
 
 		if (me->type == MOT_PAP_TYPE_CLOSED_LOOP)
-			first_half_passed =
+			first_quarter_passed =
 					(me->dir == MOT_PAP_DIRECTION_CW) ?
 							me->posAct > (me->posCmdMiddle) :
 							me->posAct < (me->posCmdMiddle);
 
-		if (!me->max_speed_reached && (!first_half_passed)) {
+		if (!me->max_speed_reached && (!first_quarter_passed)) {
 			me->current_freq += (me->freq_increment);
 			if (me->current_freq >= me->requested_freq) {
 				me->current_freq = me->requested_freq;
@@ -274,8 +276,8 @@ void mot_pap_isr(struct mot_pap *me) {
 			distance_left = me->posCmd - me->posAct;
 
 		if ((me->max_speed_reached
-				&& distance_left <= 100*(me->max_speed_reached_distance))
-				|| (!me->max_speed_reached && first_half_passed)) {
+				&& distance_left <= me->freq_slope_relation_incr_to_decr*(me->max_speed_reached_distance))
+				|| (!me->max_speed_reached && first_quarter_passed)) {
 			me->current_freq -= (me->freq_decrement);
 			if (me->current_freq <= me->freq_decrement) {
 				me->current_freq = me->freq_decrement;
