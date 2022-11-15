@@ -146,11 +146,17 @@ JSON_Value* axis_free_run_steps_cmd(JSON_Value const *pars)
 		double steps = json_object_get_number(json_value_get_object(pars),
 				"steps");
 
+		double steps = json_object_get_number(json_value_get_object(pars),
+				"step_time");
+
+		double steps = json_object_get_number(json_value_get_object(pars),
+				"step_amplitude_divider");
+
 		if (dir && speed != 0) {
 
 			enum mot_pap_direction direction = strcmp(dir, "CW") == 0 ?
 					MOT_PAP_DIRECTION_CW : MOT_PAP_DIRECTION_CCW;
-			mot_pap_move_steps(&x_axis, direction, (int)speed, (int)steps);
+			mot_pap_move_steps(&x_axis, direction, (int)speed, (int)steps, (int)step_time, (int)step_amplitude_divider);
 
 			lDebug(Info, "ARM_FREE_RUN DIR: %s, SPEED: %d", dir, (int ) speed);
 		}

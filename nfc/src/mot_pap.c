@@ -107,7 +107,7 @@ void mot_pap_move_free_run(struct mot_pap *me, enum mot_pap_direction direction,
 }
 
 void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
-		uint32_t speed, uint32_t steps) {
+		uint32_t speed, uint32_t steps, uint32_t step_time, uint32_t step_amplitude_divider) {
 	if (mot_pap_free_run_speed_ok(speed)) {
 		me->stalled = false; // If a new command was received, assume we are not stalled
 		me->stalled_counter = 0;
@@ -123,8 +123,8 @@ void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
 		me->half_steps_requested = steps << 1;
 		gpio_set_pin_state(me->gpios.direction, me->dir);
 		me->requested_freq = mot_pap_free_run_freqs[speed] * 1000;
-		me->freq_delta = me->requested_freq / 10;
-		me->freq_slope_relation_decr_to_incr = 3;
+		me->freq_delta = me->requested_freq / step_amplitude_divider;
+		me->freq_slope_relation_incr_to_decr = 3;
 		me->freq_increment = me->freq_slope_relation_incr_to_decr * me->freq_delta;
 		me->freq_decrement = me->freq_delta;
 		me->current_freq = me->freq_increment;
@@ -241,7 +241,7 @@ void mot_pap_isr(struct mot_pap *me) {
 		return;
 	}
 
-	if ((ticks_now - me->ticks_last_time) > pdMS_TO_TICKS(25)) {
+	if ((ticks_now - me->ticks_last_time) > pdMS_TO_TICKS(step_time)) {
 
 		bool first_quarter_passed = false;
 		if (me->type == MOT_PAP_TYPE_STEPS)

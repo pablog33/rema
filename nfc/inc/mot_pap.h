@@ -73,6 +73,9 @@ struct mot_pap {
 	int32_t freq_decrement;
 	int32_t half_steps_to_quarter;
 	int32_t freq_slope_relation_incr_to_decr;
+	int32_t freq_delta;
+	int32_t freq_delta_divider;
+	int32_t time_delta;
 	int32_t current_freq;
 	bool already_there;
 	bool stalled;
@@ -106,7 +109,7 @@ void mot_pap_move_free_run(struct mot_pap *me, enum mot_pap_direction direction,
 void mot_pap_move_closed_loop(struct mot_pap *status, uint16_t setpoint);
 
 void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
-		uint32_t speed, uint32_t steps);
+		uint32_t speed, uint32_t steps, uint32_t step_time, uint32_t step_amplitude_divider);
 
 void mot_pap_stop(struct mot_pap *me);
 
