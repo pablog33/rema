@@ -120,6 +120,7 @@ void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
 		me->type = MOT_PAP_TYPE_STEPS;
 		me->dir = direction;
 		me->half_steps_curr = 0;
+		me->step_time = step_time;
 		me->half_steps_requested = steps << 1;
 		gpio_set_pin_state(me->gpios.direction, me->dir);
 		me->requested_freq = mot_pap_free_run_freqs[speed] * 1000;
@@ -241,7 +242,7 @@ void mot_pap_isr(struct mot_pap *me) {
 		return;
 	}
 
-	if ((ticks_now - me->ticks_last_time) > pdMS_TO_TICKS(step_time)) {
+	if ((ticks_now - me->ticks_last_time) > pdMS_TO_TICKS(me->step_time)) {
 
 		bool first_quarter_passed = false;
 		if (me->type == MOT_PAP_TYPE_STEPS)
