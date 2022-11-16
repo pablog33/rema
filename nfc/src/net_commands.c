@@ -146,10 +146,10 @@ JSON_Value* axis_free_run_steps_cmd(JSON_Value const *pars)
 		double steps = json_object_get_number(json_value_get_object(pars),
 				"steps");
 
-		double steps = json_object_get_number(json_value_get_object(pars),
+		double step_time = json_object_get_number(json_value_get_object(pars),
 				"step_time");
 
-		double steps = json_object_get_number(json_value_get_object(pars),
+		double step_amplitude_divider = json_object_get_number(json_value_get_object(pars),
 				"step_amplitude_divider");
 
 		if (dir && speed != 0) {
