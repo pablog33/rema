@@ -121,8 +121,9 @@ void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
 		me->freq_increment = me->freq_slope_relation_incr_to_decr
 				* me->freq_delta;
 		me->freq_decrement = me->freq_delta;
-		me->current_freq = me->freq_increment;
+		me->current_freq = me->freq_delta;
 		me->half_steps_to_quarter = me->half_steps_requested >> 2;
+		me->half_steps_to_middle = me->half_steps_requested >> 1;
 		me->max_speed_reached = false;
 		me->ticks_last_time = xTaskGetTickCount();
 
@@ -199,7 +200,6 @@ void mot_pap_supervisor_task()
 {
 	while (true) {
 		struct mot_pap *me;
-		int ticks_now = xTaskGetTickCountFromISR();
 
 		if (xQueueReceive(mot_pap_supervisor_task_queue, &me,
 		portMAX_DELAY) == pdPASS) {
@@ -212,7 +212,7 @@ void mot_pap_supervisor_task()
 						me->stalled = true;
 						tmr_stop(&(me->tmr));
 						relay_main_pwr(0);
-						return;
+						goto end;
 					}
 				} else {
 					me->stalled_counter = 0;
@@ -221,29 +221,30 @@ void mot_pap_supervisor_task()
 
 			if (me->stalled) {
 				lDebug(Warn, "%s: stalled", me->name);
-				return;
+				goto end;
 			}
 
 			if (me->already_there) {
 				lDebug(Info, "%s: position reached", me->name);
-				return;
+				goto end;
 			}
 
-			if ((ticks_now - me->ticks_last_time) > pdMS_TO_TICKS(me->step_time)) {
+			int ticks_now = xTaskGetTickCount();
 
-				bool first_quarter_passed = false;
+			if ((ticks_now - me->ticks_last_time) > pdMS_TO_TICKS(me->step_time)) {
+				bool first_half_passed = false;
 				if (me->type == MOT_PAP_TYPE_STEPS)
-					first_quarter_passed = me->half_steps_curr
-							> (me->half_steps_to_quarter);
+					first_half_passed = me->half_steps_curr
+							> (me->half_steps_to_middle);
 
 				if (me->type == MOT_PAP_TYPE_CLOSED_LOOP)
-					first_quarter_passed =
+					first_half_passed =
 							(me->dir == MOT_PAP_DIRECTION_CW) ?
 									me->posAct > (me->posCmdMiddle) :
 									me->posAct < (me->posCmdMiddle);
 
-				if (!me->max_speed_reached && (!first_quarter_passed)) {
-					me->current_freq += (me->freq_increment);
+				if (!me->max_speed_reached && (!first_half_passed)) {
+					me->current_freq += (me->freq_delta);
 					if (me->current_freq >= me->requested_freq) {
 						me->current_freq = me->requested_freq;
 						me->max_speed_reached = true;
@@ -253,7 +254,6 @@ void mot_pap_supervisor_task()
 
 						if (me->type == MOT_PAP_TYPE_CLOSED_LOOP)
 							me->max_speed_reached_distance = me->posAct;
-
 					}
 				}
 
@@ -266,22 +266,21 @@ void mot_pap_supervisor_task()
 					distance_left = me->posCmd - me->posAct;
 
 				if ((me->max_speed_reached
-						&& distance_left
-								<= me->freq_slope_relation_incr_to_decr
-										* (me->max_speed_reached_distance))
-						|| (!me->max_speed_reached && first_quarter_passed)) {
-					me->current_freq -= (me->freq_decrement);
-					if (me->current_freq <= me->freq_decrement) {
-						me->current_freq = me->freq_decrement;
+						&& distance_left <= me->max_speed_reached_distance)
+						|| (!me->max_speed_reached && first_half_passed)) {
+					me->current_freq -= (me->freq_delta);
+					if (me->current_freq <= me->freq_delta) {
+						me->current_freq = me->freq_delta;
 					}
 				}
-
 				tmr_stop(&(me->tmr));
 				tmr_set_freq(&(me->tmr), me->current_freq);
 				tmr_start(&(me->tmr));
+
 				me->ticks_last_time = ticks_now;
 			}
 		}
+		end: ;
 	}
 }
 
@@ -292,7 +291,6 @@ void mot_pap_supervisor_task()
 void mot_pap_isr(struct mot_pap *me)
 {
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
 	me->posAct = count_a;
 
 	if (me->type == MOT_PAP_TYPE_STEPS) {
@@ -310,7 +308,8 @@ void mot_pap_isr(struct mot_pap *me)
 		tmr_stop(&(me->tmr));
 		xQueueSendFromISR(mot_pap_supervisor_task_queue, &me,
 				&xHigherPriorityTaskWoken);
-		return;
+		portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+		goto cont;
 	}
 
 	++me->half_steps_curr;
@@ -324,7 +323,7 @@ void mot_pap_isr(struct mot_pap *me)
 		portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 	}
 
-	me->last_pos = me->posAct;
+	cont: me->last_pos = me->posAct;
 }
 
 /**
