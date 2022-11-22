@@ -117,6 +117,9 @@ void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
 		gpio_set_pin_state(me->gpios.direction, me->dir);
 		me->requested_freq = mot_pap_free_run_freqs[speed] * 1000;
 		me->freq_delta = me->requested_freq / step_amplitude_divider;
+		me->step_amplitud_divider =  step_amplitude_divider;
+		me->ramp_nonstep_quantity = me->freq_delta;
+		me->ramp_nonstep_counter = 0;
 		me->freq_slope_relation_incr_to_decr = 3;
 		me->freq_increment = me->freq_slope_relation_incr_to_decr
 				* me->freq_delta;
@@ -244,8 +247,8 @@ void mot_pap_supervisor_task()
 									me->posAct < (me->posCmdMiddle);
 
 				if (!me->max_speed_reached && (!first_half_passed)) {
-					me->current_freq += (me->freq_delta);
-					if (me->current_freq >= me->requested_freq) {
+					--me->ramp_nonstep_quantity;
+					if (me->ramp_nonstep_quantity) {
 						me->current_freq = me->requested_freq;
 						me->max_speed_reached = true;
 						if (me->type == MOT_PAP_TYPE_STEPS)
@@ -268,14 +271,11 @@ void mot_pap_supervisor_task()
 				if ((me->max_speed_reached
 						&& distance_left <= me->max_speed_reached_distance)
 						|| (!me->max_speed_reached && first_half_passed)) {
-					me->current_freq -= (me->freq_delta);
-					if (me->current_freq <= me->freq_delta) {
+					++me->ramp_nonstep_quantity;
+					if (me->ramp_nonstep_quantity == me->step_amplitud_divider) {
 						me->current_freq = me->freq_delta;
 					}
 				}
-				tmr_stop(&(me->tmr));
-				tmr_set_freq(&(me->tmr), me->current_freq);
-				tmr_start(&(me->tmr));
 
 				me->ticks_last_time = ticks_now;
 			}
@@ -314,7 +314,17 @@ void mot_pap_isr(struct mot_pap *me)
 
 	++me->half_steps_curr;
 
-	gpio_toggle(me->gpios.step);
+	if (me->ramp_nonstep_quantity){
+		if (me->ramp_nonstep_counter == me->ramp_nonstep_quantity){
+			gpio_toggle(me->gpios.step);
+			me->ramp_nonstep_counter = 0;
+		}else{
+			++me->ramp_nonstep_counter;
+		}
+	}else{
+		gpio_toggle(me->gpios.step);
+	}
+
 
 	if (++(me->half_pulses) == MOT_PAP_SUPERVISOR_RATE) {
 		me->half_pulses = 0;

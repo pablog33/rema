@@ -72,10 +72,12 @@ struct mot_pap {
 	int32_t freq_increment;
 	int32_t freq_decrement;
 	int32_t step_time;
+	int32_t ramp_nonstep_quantity;
+	int32_t ramp_nonstep_counter;
 	int32_t half_steps_to_quarter;
 	int32_t freq_slope_relation_incr_to_decr;
 	int32_t freq_delta;
-	int32_t freq_delta_divider;
+	int32_t step_amplitud_divider;
 	int32_t time_delta;
 	int32_t current_freq;
 	bool already_there;
