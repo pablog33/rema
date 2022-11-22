@@ -15,10 +15,6 @@
 #include "tmr.h"
 #include "gpio.h"
 
-#define X_AXIS_SUPERVISOR_TASK_PRIORITY ( configMAX_PRIORITIES - 3)
-
-QueueHandle_t x_axis_queue = NULL;
-
 struct mot_pap x_axis;
 
 /**
@@ -33,8 +29,8 @@ void x_axis_init()
 	x_axis.half_pulses = 0;
 	x_axis.offset = 41230;
 
-	x_axis.gpios.direction = (struct gpio_entry) { 4, 8, SCU_MODE_FUNC4, 5, 12 };		//DOUT4 P4_8 	PIN15  	GPIO5[12]   X_AXIS_DIR
-	x_axis.gpios.step = (struct gpio_entry) { 4, 9, SCU_MODE_FUNC4, 5, 13 };			//DOUT5 P4_9  	PIN33	GPIO5[13] 	X_AXIS_STEP
+	x_axis.gpios.direction = (struct gpio_entry) { 4, 4, SCU_MODE_FUNC0, 2, 4 };	//DOUT0 P4_4 	PIN09  	GPIO2[4]   X_AXIS_STEP
+	x_axis.gpios.step = (struct gpio_entry) { 4, 8, SCU_MODE_FUNC4, 5, 12 };		//DOUT4 P4_8 	PIN15  	GPIO5[12]  X_AXIS_DIR
 
 	gpio_init_output(x_axis.gpios.direction);
 	gpio_init_output(x_axis.gpios.step);
@@ -51,7 +47,6 @@ void x_axis_init()
 /**
  * @brief	handle interrupt from 32-bit timer to generate pulses for the stepper motor drivers
  * @returns	nothing
- * @note 	calls the supervisor task every x number of generated steps
  */
 void TIMER1_IRQHandler(void)
 {

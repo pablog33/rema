@@ -22,6 +22,9 @@ extern int count_b;
 extern int count_a;
 
 extern struct mot_pap x_axis;
+extern struct mot_pap y_axis;
+extern struct mot_pap z_axis;
+
 
 typedef struct {
 	char *cmd_name;
@@ -139,18 +142,44 @@ JSON_Value* axis_free_run_cmd(JSON_Value const *pars)
 JSON_Value* axis_free_run_steps_cmd(JSON_Value const *pars)
 {
 	if (pars && json_value_get_type(pars) == JSONObject) {
+
+		char const *axis = json_object_get_string(json_value_get_object(pars),
+						"axis");
 		char const *dir = json_object_get_string(json_value_get_object(pars),
-				"dir");
+						"dir");
 		double speed = json_object_get_number(json_value_get_object(pars),
 				"speed");
 		double steps = json_object_get_number(json_value_get_object(pars),
 				"steps");
 
+		double step_time = json_object_get_number(json_value_get_object(pars),
+				"step_time");
+
+		double step_amplitude_divider = json_object_get_number(json_value_get_object(pars),
+				"step_amplitude_divider");
+
 		if (dir && speed != 0) {
 
 			enum mot_pap_direction direction = strcmp(dir, "CW") == 0 ?
 					MOT_PAP_DIRECTION_CW : MOT_PAP_DIRECTION_CCW;
-			mot_pap_move_steps(&x_axis, direction, (int)speed, (int)steps);
+			struct mot_pap *axis_;
+			switch (*axis) {
+				case 'x':
+				case 'X':
+						axis_ = &x_axis;
+						break;
+				case 'y':
+				case 'Y':
+						axis_ = &y_axis;
+						break;
+				case 'z':
+				case 'Z':
+						axis_ = &z_axis;
+					break;
+				default:
+					break;
+			}
+			mot_pap_move_steps (axis_, direction, (int)speed, (int)steps, (int)step_time, (int)step_amplitude_divider);
 
 			lDebug(Info, "AXIS_FREE_RUN DIR: %s, SPEED: %d", dir, (int ) speed);
 		}
