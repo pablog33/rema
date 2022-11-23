@@ -219,20 +219,20 @@ JSON_Value* network_settings_cmd(JSON_Value const *pars)
 			struct settings settings;
 
 			unsigned char *gw_bytes = (unsigned char*) &(settings.gw.addr);
-			if (sscanf(gw, "%hu.%hu.%hu.%hu", &gw_bytes[0], &gw_bytes[1],
+			if (sscanf(gw, "%hhu.%hhu.%hhu.%hhu", &gw_bytes[0], &gw_bytes[1],
 					&gw_bytes[2], &gw_bytes[3]) == 4) {
 			}
 
 			unsigned char *ipaddr_bytes =
 					(unsigned char*) &(settings.ipaddr.addr);
-			if (sscanf(ipaddr, "%hu.%hu.%hu.%hu", &ipaddr_bytes[0],
+			if (sscanf(ipaddr, "%hhu.%hhu.%hhu.%hhu", &ipaddr_bytes[0],
 					&ipaddr_bytes[1], &ipaddr_bytes[2], &ipaddr_bytes[3])
 					== 4) {
 			}
 
 			unsigned char *netmask_bytes =
 					(unsigned char*) &(settings.netmask.addr);
-			if (sscanf(netmask, "%hu.%hu.%hu.%hu", &netmask_bytes[0],
+			if (sscanf(netmask, "%hhu.%hhu.%hhu.%hhu", &netmask_bytes[0],
 					&netmask_bytes[1], &netmask_bytes[2], &netmask_bytes[3])
 					== 4) {
 			}

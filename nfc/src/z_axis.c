@@ -47,6 +47,10 @@ void z_axis_init()
 /**
  * @brief	handle interrupt from 32-bit timer to generate pulses for the stepper motor drivers
  * @returns	nothing
+<<<<<<< HEAD
+ * @note 	calls the supervisor task every x number of generated steps
+=======
+>>>>>>> deferred_isr
  */
 void TIMER3_IRQHandler(void)
 {

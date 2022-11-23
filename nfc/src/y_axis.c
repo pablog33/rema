@@ -47,6 +47,7 @@ void y_axis_init()
 /**
  * @brief	handle interrupt from 32-bit timer to generate pulses for the stepper motor drivers
  * @returns	nothing
+ * @note 	calls the supervisor task every x number of generated steps
  */
 void TIMER2_IRQHandler(void)
 {
