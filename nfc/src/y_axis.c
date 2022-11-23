@@ -15,10 +15,6 @@
 #include "tmr.h"
 #include "gpio.h"
 
-#define Y_AXIS_SUPERVISOR_TASK_PRIORITY ( configMAy_PRIORITIES - 3)
-
-QueueHandle_t y_axis_queue = NULL;
-
 struct mot_pap y_axis;
 
 /**
@@ -33,8 +29,8 @@ void y_axis_init()
 	y_axis.half_pulses = 0;
 	y_axis.offset = 41230;
 
-	y_axis.gpios.direction = (struct gpio_entry) { 4, 5, SCU_MODE_FUNC0, 2, 5 };		//DOUT1 P4_5 	PIN10  	GPIO2[5]   y_AXIS_STEP
-	y_axis.gpios.step = (struct gpio_entry) { 4, 9, SCU_MODE_FUNC4, 5, 13 };		//DOUT5 P4_9 	PIN33  	GPIO5[13]   y_AXIS_DIR
+	y_axis.gpios.direction = (struct gpio_entry) { 4, 5, SCU_MODE_FUNC0, 2, 5 };	//DOUT1 P4_5 	PIN10  	GPIO2[5]   Y_AXIS_STEP
+	y_axis.gpios.step = (struct gpio_entry) { 4, 9, SCU_MODE_FUNC4, 5, 13 };		//DOUT5 P4_9 	PIN33  	GPIO5[13]  Y_AXIS_DIR
 
 	gpio_init_output(y_axis.gpios.direction);
 	gpio_init_output(y_axis.gpios.step);

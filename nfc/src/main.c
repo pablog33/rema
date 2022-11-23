@@ -56,6 +56,9 @@ static void prvSetupHardware(void)
 	relay_init();
 	mot_pap_init();
 	x_axis_init();
+	y_axis_init();
+	z_axis_init();
+
 	//temperature_init();
 	//temperature_ds18b20_init();
 	encoders_init();

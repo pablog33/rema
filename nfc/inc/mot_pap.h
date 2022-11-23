@@ -21,7 +21,7 @@ extern "C" {
 #define MOT_PAP_COMPUMOTOR_MAX_FREQ				300000
 #define MOT_PAP_DIRECTION_CHANGE_DELAY_MS		500
 
-#define MOT_PAP_SUPERVISOR_RATE    				2500	//2 means one step
+#define MOT_PAP_SUPERVISOR_RATE    				625	//2 means one step
 #define MOT_PAP_POS_PROXIMITY_THRESHOLD			100
 #define MOT_PAP_POS_THRESHOLD 					6
 #define MOT_PAP_STALL_THRESHOLD 				3
@@ -103,6 +103,8 @@ uint16_t mot_pap_offset_correction(uint16_t pos, uint16_t offset,
 void mot_pap_read_corrected_pos(struct mot_pap *me);
 
 void mot_pap_isr_helper_task();
+
+void mot_pap_supervisor_task();
 
 void mot_pap_move_free_run(struct mot_pap *me, enum mot_pap_direction direction,
 		uint32_t speed);
