@@ -98,7 +98,7 @@ void mot_pap_move_free_run(struct mot_pap *me, enum mot_pap_direction direction,
 
 void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
 		uint32_t speed, uint32_t steps, uint32_t step_time,
-		uint32_t step_amplitude_divider)
+		uint32_t step_amplitude_divider, unit32_t ramp_nonstep_quantity)
 {
 	if (mot_pap_free_run_speed_ok(speed)) {
 		me->stalled = false; // If a new command was received, assume we are not stalled
@@ -118,7 +118,7 @@ void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
 		me->requested_freq = mot_pap_free_run_freqs[speed] * 1000;
 		me->freq_delta = me->requested_freq / step_amplitude_divider;
 		me->step_amplitud_divider =  step_amplitude_divider;
-		me->ramp_nonstep_quantity = me->freq_delta;
+		me->ramp_nonstep_quantity = ramp_nonstep_quantity;
 		me->ramp_nonstep_counter = 0;
 		me->freq_slope_relation_incr_to_decr = 3;
 		me->freq_increment = me->freq_slope_relation_incr_to_decr
@@ -312,17 +312,17 @@ void mot_pap_isr(struct mot_pap *me)
 		goto cont;
 	}
 
-	++me->half_steps_curr;
-
 	if (me->ramp_nonstep_quantity){
 		if (me->ramp_nonstep_counter == me->ramp_nonstep_quantity){
 			gpio_toggle(me->gpios.step);
+			++me->half_steps_curr;
 			me->ramp_nonstep_counter = 0;
 		}else{
 			++me->ramp_nonstep_counter;
 		}
 	}else{
 		gpio_toggle(me->gpios.step);
+		++me->half_steps_curr;
 	}
 
 

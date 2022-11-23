@@ -158,6 +158,9 @@ JSON_Value* axis_free_run_steps_cmd(JSON_Value const *pars)
 		double step_amplitude_divider = json_object_get_number(json_value_get_object(pars),
 				"step_amplitude_divider");
 
+		double ramp_nonstep_quantity = json_object_get_number(json_value_get_object(pars),
+						"ramp_nonstep_quantity");
+
 		if (dir && speed != 0) {
 
 			enum mot_pap_direction direction = strcmp(dir, "CW") == 0 ?
@@ -179,7 +182,7 @@ JSON_Value* axis_free_run_steps_cmd(JSON_Value const *pars)
 				default:
 					break;
 			}
-			mot_pap_move_steps (axis_, direction, (int)speed, (int)steps, (int)step_time, (int)step_amplitude_divider);
+			mot_pap_move_steps (axis_, direction, (int)speed, (int)steps, (int)step_time, (int)step_amplitude_divider, (int)ramp_nonstep_quantity);
 
 			lDebug(Info, "ARM_FREE_RUN DIR: %s, SPEED: %d", dir, (int ) speed);
 		}
