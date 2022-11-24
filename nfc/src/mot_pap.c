@@ -15,6 +15,7 @@
 
 extern bool stall_detection;
 extern int count_a;
+extern bool x_zs;
 
 SemaphoreHandle_t mot_pap_supervisor_semaphore;
 
@@ -267,10 +268,13 @@ void mot_pap_supervisor_task()
 
 				if ((me->max_speed_reached
 						&& distance_left <= me->max_speed_reached_distance)
-						|| (!me->max_speed_reached && first_half_passed)) {
+						|| (!me->max_speed_reached && first_half_passed) || x_zs) {
 					me->current_freq -= (me->freq_delta);
 					if (me->current_freq <= me->freq_delta) {
 						me->current_freq = me->freq_delta;
+					}
+					if (x_zs) {
+						x_zs = 0;
 					}
 				}
 				tmr_stop(&(me->tmr));
