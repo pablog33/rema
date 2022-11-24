@@ -21,7 +21,7 @@ extern "C" {
 #define MOT_PAP_COMPUMOTOR_MAX_FREQ				300000
 #define MOT_PAP_DIRECTION_CHANGE_DELAY_MS		500
 
-#define MOT_PAP_SUPERVISOR_RATE    				2500	//2 means one step
+#define MOT_PAP_SUPERVISOR_RATE    				625	//2 means one step
 #define MOT_PAP_POS_PROXIMITY_THRESHOLD			100
 #define MOT_PAP_POS_THRESHOLD 					6
 #define MOT_PAP_STALL_THRESHOLD 				3
@@ -52,12 +52,19 @@ struct mot_pap {
 	char *name;
 	enum mot_pap_type type;
 	enum mot_pap_direction dir;
-	int posAct;
-	int posCmd;
-	int posCmdMiddle;
-	int requested_freq;
-	int freq_increment;
-	int current_freq;
+	int32_t posAct;
+	int32_t posCmd;
+	int32_t posCmdMiddle;
+	int32_t requested_freq;
+	int32_t freq_increment;
+	int32_t freq_decrement;
+	int32_t step_time;
+	int32_t half_steps_to_quarter;
+	int32_t freq_slope_relation_incr_to_decr;
+	int32_t freq_delta;
+	int32_t freq_delta_divider;
+	int32_t time_delta;
+	int32_t current_freq;
 	bool already_there;
 	bool stalled;
 	int last_pos;
@@ -84,13 +91,15 @@ void mot_pap_read_corrected_pos(struct mot_pap *me);
 
 void mot_pap_isr_helper_task();
 
+void mot_pap_supervisor_task();
+
 void mot_pap_move_free_run(struct mot_pap *me, enum mot_pap_direction direction,
 		int speed);
 
 void mot_pap_move_closed_loop(struct mot_pap *status, uint16_t setpoint);
 
 void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
-		int speed, int steps);
+		uint32_t speed, uint32_t steps, uint32_t step_time, uint32_t step_amplitude_divider);
 
 void mot_pap_stop(struct mot_pap *me);
 

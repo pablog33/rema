@@ -12,7 +12,7 @@
  * @returns nothing
  */
 void gpio_init_output(struct gpio_entry gpio) {
-	Chip_SCU_PinMuxSet(gpio.pin_port, gpio.pin_bit, gpio.scu_mode);
+	Chip_SCU_PinMuxSet(gpio.scu_port, gpio.scu_pin, gpio.scu_mode);
 	Chip_GPIO_SetPinDIROutput(LPC_GPIO_PORT, gpio.gpio_port, gpio.gpio_bit);
 }
 
@@ -21,7 +21,7 @@ void gpio_init_output(struct gpio_entry gpio) {
  * @returns nothing
  */
 void gpio_init_input(struct gpio_entry gpio) {
-	Chip_SCU_PinMuxSet(gpio.pin_port, gpio.pin_bit, gpio.scu_mode);
+	Chip_SCU_PinMuxSet(gpio.scu_port, gpio.scu_pin, gpio.scu_mode);
 	Chip_GPIO_SetPinDIRInput(LPC_GPIO_PORT, gpio.gpio_port, gpio.gpio_bit);
 }
 

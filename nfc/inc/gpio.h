@@ -8,8 +8,8 @@ extern "C" {
 #endif
 
 struct gpio_entry {
-	int pin_port;
-	int pin_bit;
+	int scu_port;
+	int scu_pin;
 	int scu_mode;
 	int gpio_port;
 	int gpio_bit;

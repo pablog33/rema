@@ -22,6 +22,9 @@ extern int count_b;
 extern int count_a;
 
 extern struct mot_pap x_axis;
+extern struct mot_pap y_axis;
+extern struct mot_pap z_axis;
+
 
 typedef struct {
 	char *cmd_name;
@@ -139,18 +142,44 @@ JSON_Value* axis_free_run_cmd(JSON_Value const *pars)
 JSON_Value* axis_free_run_steps_cmd(JSON_Value const *pars)
 {
 	if (pars && json_value_get_type(pars) == JSONObject) {
+
+		char const *axis = json_object_get_string(json_value_get_object(pars),
+						"axis");
 		char const *dir = json_object_get_string(json_value_get_object(pars),
-				"dir");
+						"dir");
 		double speed = json_object_get_number(json_value_get_object(pars),
 				"speed");
 		double steps = json_object_get_number(json_value_get_object(pars),
 				"steps");
 
+		double step_time = json_object_get_number(json_value_get_object(pars),
+				"step_time");
+
+		double step_amplitude_divider = json_object_get_number(json_value_get_object(pars),
+				"step_amplitude_divider");
+
 		if (dir && speed != 0) {
 
 			enum mot_pap_direction direction = strcmp(dir, "CW") == 0 ?
 					MOT_PAP_DIRECTION_CW : MOT_PAP_DIRECTION_CCW;
-			mot_pap_move_steps(&x_axis, direction, (int)speed, (int)steps);
+			struct mot_pap *axis_;
+			switch (*axis) {
+				case 'x':
+				case 'X':
+						axis_ = &x_axis;
+						break;
+				case 'y':
+				case 'Y':
+						axis_ = &y_axis;
+						break;
+				case 'z':
+				case 'Z':
+						axis_ = &z_axis;
+					break;
+				default:
+					break;
+			}
+			mot_pap_move_steps (axis_, direction, (int)speed, (int)steps, (int)step_time, (int)step_amplitude_divider);
 
 			lDebug(Info, "AXIS_FREE_RUN DIR: %s, SPEED: %d", dir, (int ) speed);
 		}
@@ -190,20 +219,20 @@ JSON_Value* network_settings_cmd(JSON_Value const *pars)
 			struct settings settings;
 
 			unsigned char *gw_bytes = (unsigned char*) &(settings.gw.addr);
-			if (sscanf(gw, "%hu.%hu.%hu.%hu", &gw_bytes[0], &gw_bytes[1],
+			if (sscanf(gw, "%hhu.%hhu.%hhu.%hhu", &gw_bytes[0], &gw_bytes[1],
 					&gw_bytes[2], &gw_bytes[3]) == 4) {
 			}
 
 			unsigned char *ipaddr_bytes =
 					(unsigned char*) &(settings.ipaddr.addr);
-			if (sscanf(ipaddr, "%hu.%hu.%hu.%hu", &ipaddr_bytes[0],
+			if (sscanf(ipaddr, "%hhu.%hhu.%hhu.%hhu", &ipaddr_bytes[0],
 					&ipaddr_bytes[1], &ipaddr_bytes[2], &ipaddr_bytes[3])
 					== 4) {
 			}
 
 			unsigned char *netmask_bytes =
 					(unsigned char*) &(settings.netmask.addr);
-			if (sscanf(netmask, "%hu.%hu.%hu.%hu", &netmask_bytes[0],
+			if (sscanf(netmask, "%hhu.%hhu.%hhu.%hhu", &netmask_bytes[0],
 					&netmask_bytes[1], &netmask_bytes[2], &netmask_bytes[3])
 					== 4) {
 			}
