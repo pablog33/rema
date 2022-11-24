@@ -70,7 +70,7 @@ bool mot_pap_free_run_speed_ok(uint32_t speed)
  * @returns	nothing
  */
 void mot_pap_move_free_run(struct mot_pap *me, enum mot_pap_direction direction,
-		uint32_t speed)
+		int speed)
 {
 	if (mot_pap_free_run_speed_ok(speed)) {
 		me->stalled = false; // If a new command was received, assume we are not stalled
@@ -188,6 +188,7 @@ void mot_pap_stop(struct mot_pap *me)
 {
 	me->type = MOT_PAP_TYPE_STOP;
 	tmr_stop(&(me->tmr));
+	x_zs = 0;
 	lDebug(Info, "%s: STOP", me->name);
 }
 
@@ -272,10 +273,12 @@ void mot_pap_supervisor_task()
 					me->current_freq -= (me->freq_delta);
 					if (me->current_freq <= me->freq_delta) {
 						me->current_freq = me->freq_delta;
+						if (x_zs){
+							tmr_stop(&(me->tmr));
+							goto end;
+						}
 					}
-					if (x_zs) {
-						x_zs = 0;
-					}
+
 				}
 				tmr_stop(&(me->tmr));
 				tmr_set_freq(&(me->tmr), me->current_freq);
