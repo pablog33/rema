@@ -127,6 +127,7 @@ void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
 		me->half_steps_to_middle = me->half_steps_requested >> 1;
 		me->max_speed_reached = false;
 		me->ticks_last_time = xTaskGetTickCount();
+		x_zs = false;
 
 		tmr_stop(&(me->tmr));
 		tmr_set_freq(&(me->tmr), me->current_freq);
@@ -188,7 +189,6 @@ void mot_pap_stop(struct mot_pap *me)
 {
 	me->type = MOT_PAP_TYPE_STOP;
 	tmr_stop(&(me->tmr));
-	x_zs = 0;
 	lDebug(Info, "%s: STOP", me->name);
 }
 
@@ -245,7 +245,7 @@ void mot_pap_supervisor_task()
 									me->posAct > (me->posCmdMiddle) :
 									me->posAct < (me->posCmdMiddle);
 
-				if (!me->max_speed_reached && (!first_half_passed)) {
+				if (!me->max_speed_reached && (!first_half_passed) && !x_zs) {
 					me->current_freq += (me->freq_delta);
 					if (me->current_freq >= me->requested_freq) {
 						me->current_freq = me->requested_freq;

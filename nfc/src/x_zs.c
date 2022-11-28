@@ -10,7 +10,7 @@
 #include "encoders.h"
 #include "gpio.h"
 
-bool x_zs = 0;
+bool x_zs = false;
 
 
 /**
@@ -20,7 +20,7 @@ bool x_zs = 0;
 void GPIO2_IRQHandler(void)
 {
 	Chip_PININT_ClearIntStatus(LPC_GPIO_PIN_INT, PININTCH(2));
-	x_zs = 1;
+	x_zs = true;
 }
 
 
