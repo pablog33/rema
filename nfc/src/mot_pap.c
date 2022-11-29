@@ -123,7 +123,6 @@ void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
 				* me->freq_delta;
 		me->freq_decrement = me->freq_delta;
 		me->current_freq = me->freq_delta;
-		me->half_steps_to_quarter = me->half_steps_requested >> 2;
 		me->half_steps_to_middle = me->half_steps_requested >> 1;
 		me->max_speed_reached = false;
 		me->ticks_last_time = xTaskGetTickCount();
