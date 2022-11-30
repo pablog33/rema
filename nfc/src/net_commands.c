@@ -20,6 +20,7 @@ bool stall_detection = true;
 extern int count_z;
 extern int count_b;
 extern int count_a;
+extern bool x_zs;
 
 extern struct mot_pap x_axis;
 extern struct mot_pap y_axis;
@@ -34,9 +35,10 @@ typedef struct {
 JSON_Value* telemetria_cmd(JSON_Value const *pars)
 {
 	JSON_Value *ans = json_value_init_object();
-	json_object_set_number(json_value_get_object(ans), "cuentas A", count_z);
+	json_object_set_number(json_value_get_object(ans), "cuentas A", x_axis.encoder_count);
 	json_object_set_number(json_value_get_object(ans), "cuentas B", count_b);
-	json_object_set_number(json_value_get_object(ans), "cuentas Z", count_a);
+	json_object_set_number(json_value_get_object(ans), "cuentas Z", count_z);
+	json_object_set_boolean(json_value_get_object(ans), "ZS x", x_zs);
 
 	//json_object_set_value(json_value_get_object(ans), "eje_x", mot_pap_json(&x_axis));
 
@@ -130,7 +132,7 @@ JSON_Value* axis_free_run_cmd(JSON_Value const *pars)
 					MOT_PAP_DIRECTION_CW : MOT_PAP_DIRECTION_CCW;
 			mot_pap_move_free_run(&x_axis, direction, (int)speed);
 
-			lDebug(Info, "ARM_FREE_RUN DIR: %s, SPEED: %d", dir, (int ) speed);
+			lDebug(Info, "AXIS_FREE_RUN DIR: %s, SPEED: %d", dir, (int ) speed);
 		}
 		JSON_Value *ans = json_value_init_object();
 		json_object_set_boolean(json_value_get_object(ans), "ACK", true);
@@ -181,7 +183,7 @@ JSON_Value* axis_free_run_steps_cmd(JSON_Value const *pars)
 			}
 			mot_pap_move_steps (axis_, direction, (int)speed, (int)steps, (int)step_time, (int)step_amplitude_divider);
 
-			lDebug(Info, "ARM_FREE_RUN DIR: %s, SPEED: %d", dir, (int ) speed);
+			lDebug(Info, "AXIS_FREE_RUN DIR: %s, SPEED: %d", dir, (int ) speed);
 		}
 		JSON_Value *ans = json_value_init_object();
 		json_object_set_boolean(json_value_get_object(ans), "ACK", true);
@@ -193,9 +195,6 @@ JSON_Value* axis_free_run_steps_cmd(JSON_Value const *pars)
 
 JSON_Value* axis_stop_cmd(JSON_Value const *pars)
 {
-	struct mot_pap_msg *msg = (struct mot_pap_msg*) pvPortMalloc(
-			sizeof(struct mot_pap_msg));
-
 	mot_pap_stop(&x_axis);
 	JSON_Value *ans = json_value_init_object();
 	json_object_set_boolean(json_value_get_object(ans), "ACK", true);

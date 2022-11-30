@@ -29,7 +29,7 @@ void z_axis_init()
 	z_axis.half_pulses = 0;
 	z_axis.offset = 41230;
 
-	z_axis.gpios.direction = (struct gpio_entry) { 4, 6, SCU_MODE_FUNC0, 2, 6 };	//DOUT2 P4_6 	PIN08  	GPIO2[6]   Z_AXIS_STEP
+	z_axis.gpios.direction = (struct gpio_entry) { 4, 6, SCU_MODE_FUNC0, 2, 5 };	//DOUT2 P4_6 	PIN08  	GPIO2[5]   Z_AXIS_DIR
 	z_axis.gpios.step = (struct gpio_entry) { 4, 10, SCU_MODE_FUNC4, 5, 14 };		//DOUT6 P4_10 	PIN35  	GPIO5[14]  Z_AXIS_STEP
 
 	gpio_init_output(z_axis.gpios.direction);

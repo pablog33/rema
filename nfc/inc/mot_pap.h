@@ -36,19 +36,6 @@ enum mot_pap_type {
 };
 
 /**
- * @struct 	mot_pap_msg
- * @brief	messages to axis tasks.
- */
-struct mot_pap_msg {
-	enum mot_pap_type type;
-	enum mot_pap_direction free_run_direction;
-	uint32_t free_run_speed;
-	uint16_t closed_loop_setpoint;
-	uint32_t steps;
-	struct mot_pap *axis;
-};
-
-/**
  * @struct 	mot_pap_gpios
  * @brief	pointers to functions to handle GPIO lines of this stepper motor.
  */
@@ -72,26 +59,27 @@ struct mot_pap {
 	int32_t freq_increment;
 	int32_t freq_decrement;
 	int32_t step_time;
-	int32_t half_steps_to_quarter;
 	int32_t freq_slope_relation_incr_to_decr;
 	int32_t freq_delta;
 	int32_t freq_delta_divider;
 	int32_t time_delta;
 	int32_t current_freq;
+	int32_t encoder_count;
+	int32_t uno;
 	bool already_there;
 	bool stalled;
-	int32_t last_pos;
+	int last_pos;
 	uint32_t stalled_counter;
 	struct mot_pap_gpios gpios;
 	struct tmr tmr;
 	enum mot_pap_direction last_dir;
-	int32_t half_pulses;			// counts steps from the last call to supervisor task
-	int32_t offset;
-	int32_t half_steps_requested;
-	int32_t half_steps_curr;
-	int32_t half_steps_to_middle;
-	int32_t max_speed_reached_distance;
-	int32_t ticks_last_time;
+	int half_pulses;			// counts steps from the last call to supervisor task
+	int offset;
+	int half_steps_requested;
+	int half_steps_curr;
+	int half_steps_to_middle;
+	int max_speed_reached_distance;
+	int ticks_last_time;
 	bool max_speed_reached;
 };
 
@@ -107,7 +95,7 @@ void mot_pap_isr_helper_task();
 void mot_pap_supervisor_task();
 
 void mot_pap_move_free_run(struct mot_pap *me, enum mot_pap_direction direction,
-		uint32_t speed);
+		int speed);
 
 void mot_pap_move_closed_loop(struct mot_pap *status, uint16_t setpoint);
 
@@ -118,7 +106,14 @@ void mot_pap_stop(struct mot_pap *me);
 
 void mot_pap_isr(struct mot_pap *me);
 
-void mot_pap_update_position(struct mot_pap *me);
+static inline void mot_pap_update_position(struct mot_pap *me) {
+//	if (me->dir == MOT_PAP_DIRECTION_CW){
+//		++me->encoder_count;
+//	}else {
+//		--me->encoder_count;
+//	}
+	me->encoder_count += me->uno;
+}
 
 void mot_pap_set_offset(struct mot_pap *me, uint16_t offset);
 

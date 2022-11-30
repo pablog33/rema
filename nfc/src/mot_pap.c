@@ -15,6 +15,7 @@
 
 extern bool stall_detection;
 extern int count_a;
+extern bool x_zs;
 
 SemaphoreHandle_t mot_pap_supervisor_semaphore;
 
@@ -69,7 +70,7 @@ bool mot_pap_free_run_speed_ok(uint32_t speed)
  * @returns	nothing
  */
 void mot_pap_move_free_run(struct mot_pap *me, enum mot_pap_direction direction,
-		uint32_t speed)
+		int speed)
 {
 	if (mot_pap_free_run_speed_ok(speed)) {
 		me->stalled = false; // If a new command was received, assume we are not stalled
@@ -82,17 +83,18 @@ void mot_pap_move_free_run(struct mot_pap *me, enum mot_pap_direction direction,
 		}
 		me->type = MOT_PAP_TYPE_FREE_RUNNING;
 		me->dir = direction;
+		me->uno = me->dir == MOT_PAP_DIRECTION_CW ? 1:-1;
 		gpio_set_pin_state(me->gpios.direction, me->dir);
 		me->requested_freq = mot_pap_free_run_freqs[speed] * 1000;
 
 		tmr_stop(&(me->tmr));
 		tmr_set_freq(&(me->tmr), me->requested_freq);
 		tmr_start(&(me->tmr));
-		lDebug(Info, "%s: FREE RUN, speed: %u, direction: %s", me->name,
+		lDebug(Info, "%s: FREE RUN, speed: %i, direction: %s", me->name,
 				me->requested_freq,
 				me->dir == MOT_PAP_DIRECTION_CW ? "CW" : "CCW");
 	} else {
-		lDebug(Warn, "%s: chosen speed out of bounds %u", me->name, speed);
+		lDebug(Warn, "%s: chosen speed out of bounds %i", me->name, speed);
 	}
 }
 
@@ -111,6 +113,7 @@ void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
 		}
 		me->type = MOT_PAP_TYPE_STEPS;
 		me->dir = direction;
+		me->uno = me->dir == MOT_PAP_DIRECTION_CW ? 1:-1;
 		me->half_steps_curr = 0;
 		me->step_time = step_time;
 		me->half_steps_requested = steps << 1;
@@ -122,10 +125,10 @@ void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
 				* me->freq_delta;
 		me->freq_decrement = me->freq_delta;
 		me->current_freq = me->freq_delta;
-		me->half_steps_to_quarter = me->half_steps_requested >> 2;
 		me->half_steps_to_middle = me->half_steps_requested >> 1;
 		me->max_speed_reached = false;
 		me->ticks_last_time = xTaskGetTickCount();
+		x_zs = false;
 
 		tmr_stop(&(me->tmr));
 		tmr_set_freq(&(me->tmr), me->current_freq);
@@ -134,7 +137,7 @@ void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
 				me->requested_freq,
 				me->dir == MOT_PAP_DIRECTION_CW ? "CW" : "CCW");
 	} else {
-		lDebug(Warn, "%s: chosen speed out of bounds %u", me->name, speed);
+		lDebug(Warn, "%s: chosen speed out of bounds %i", me->name, speed);
 	}
 }
 
@@ -152,7 +155,7 @@ void mot_pap_move_closed_loop(struct mot_pap *me, uint16_t setpoint)
 	me->stalled_counter = 0;
 
 	me->posCmd = setpoint;
-	lDebug(Info, "%s: CLOSED_LOOP posCmd: %u posAct: %u", me->name, me->posCmd,
+	lDebug(Info, "%s: CLOSED_LOOP posCmd: %i posAct: %i", me->name, me->posCmd,
 			me->posAct);
 
 	//calculate position error
@@ -170,6 +173,7 @@ void mot_pap_move_closed_loop(struct mot_pap *me, uint16_t setpoint)
 		}
 		me->type = MOT_PAP_TYPE_CLOSED_LOOP;
 		me->dir = dir;
+		me->uno = dir == MOT_PAP_DIRECTION_CW ? 1:-1;
 		gpio_set_pin_state(me->gpios.direction, me->dir);
 		me->requested_freq = MOT_PAP_MAX_FREQ;
 		tmr_stop(&(me->tmr));
@@ -243,7 +247,7 @@ void mot_pap_supervisor_task()
 									me->posAct > (me->posCmdMiddle) :
 									me->posAct < (me->posCmdMiddle);
 
-				if (!me->max_speed_reached && (!first_half_passed)) {
+				if (!me->max_speed_reached && (!first_half_passed) && !x_zs) {
 					me->current_freq += (me->freq_delta);
 					if (me->current_freq >= me->requested_freq) {
 						me->current_freq = me->requested_freq;
@@ -267,11 +271,16 @@ void mot_pap_supervisor_task()
 
 				if ((me->max_speed_reached
 						&& distance_left <= me->max_speed_reached_distance)
-						|| (!me->max_speed_reached && first_half_passed)) {
+						|| (!me->max_speed_reached && first_half_passed) || x_zs) {
 					me->current_freq -= (me->freq_delta);
 					if (me->current_freq <= me->freq_delta) {
 						me->current_freq = me->freq_delta;
+						if (x_zs){
+							tmr_stop(&(me->tmr));
+							goto end;
+						}
 					}
+
 				}
 				tmr_stop(&(me->tmr));
 				tmr_set_freq(&(me->tmr), me->current_freq);
@@ -330,10 +339,6 @@ void mot_pap_isr(struct mot_pap *me)
  * @brief 	updates the current position from encoder
  * @param 	me : struct mot_pap pointer
  */
-void mot_pap_update_position(struct mot_pap *me)
-{
-//	me->posAct = count_a;
-}
 
 /**
  * @brief	sets axis offset

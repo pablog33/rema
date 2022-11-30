@@ -27,6 +27,7 @@
 #include "tcp_server.h"
 #include "mem_check.h"
 #include "encoders.h"
+#include "x_zs.h"
 
 extern struct gpio_entry relay_1;
 
@@ -55,6 +56,7 @@ static void prvSetupHardware(void)
 	//settings_erase();
 	relay_init();
 	mot_pap_init();
+	ZS_init();
 	x_axis_init();
 	y_axis_init();
 	z_axis_init();
@@ -133,7 +135,7 @@ void vAssertCalled(unsigned long ulLine, const char *const pcFileName)
 
 	taskENTER_CRITICAL();
 	{
-		printf("[ASSERT] %s:%d\n", pcFileName, ulLine);
+		printf("[ASSERT] %s:%lu\n", pcFileName, ulLine);
 		/* You can step out of this function to debug the assertion by using
 		 the debugger to set ulSetToNonZeroInDebuggerToContinue to a non-zero
 		 value. */

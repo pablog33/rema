@@ -98,7 +98,7 @@ void vStackIpSetup(void *pvParameters) {
 #endif
 
 	/* Initialize and start application */
-	stackIp_ThreadInit((void*) settings.port);
+	stackIp_ThreadInit(settings.port);
 
 	/* This loop monitors the PHY link and will handle cable events
 	   via the PHY driver. */
