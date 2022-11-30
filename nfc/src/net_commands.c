@@ -35,7 +35,7 @@ typedef struct {
 JSON_Value* telemetria_cmd(JSON_Value const *pars)
 {
 	JSON_Value *ans = json_value_init_object();
-	json_object_set_number(json_value_get_object(ans), "cuentas A", count_a);
+	json_object_set_number(json_value_get_object(ans), "cuentas A", x_axis.encoder_count);
 	json_object_set_number(json_value_get_object(ans), "cuentas B", count_b);
 	json_object_set_number(json_value_get_object(ans), "cuentas Z", count_z);
 	json_object_set_boolean(json_value_get_object(ans), "ZS x", x_zs);

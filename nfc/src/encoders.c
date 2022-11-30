@@ -6,6 +6,7 @@
  */
 
 #include "mot_pap.h"
+#include "x_axis.h"
 
 #include <stdint.h>
 #include "board.h"
@@ -16,6 +17,7 @@ int count_z = 0;
 int count_b = 0;
 int count_a = 0;
 
+extern struct mot_pap x_axis;
 
 /**
 * @brief	Handle interrupt from GPIO pin or GPIO pin mapped to PININT
