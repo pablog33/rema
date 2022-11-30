@@ -336,9 +336,19 @@ void mot_pap_isr(struct mot_pap *me)
  * @brief 	updates the current position from encoder
  * @param 	me : struct mot_pap pointer
  */
+
 void mot_pap_update_position(struct mot_pap *me)
 {
-//	me->posAct = count_a;
+
+void mot_pap_update_position(struct mot_pap *me) {
+	if (me->dir == MOT_PAP_DIRECTION_CW){
+		++me->encoder_count;
+	}else {
+		--me->encoder_count;
+	}
+
+//	me->dir == MOT_PAP_DIRECTION_CW ? ++me->encoder_count:--me->encoder_count;
+
 }
 
 /**

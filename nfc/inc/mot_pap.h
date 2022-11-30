@@ -64,6 +64,7 @@ struct mot_pap {
 	int32_t freq_delta_divider;
 	int32_t time_delta;
 	int32_t current_freq;
+	int32_t encoder_count;
 	bool already_there;
 	bool stalled;
 	int last_pos;

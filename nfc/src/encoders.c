@@ -5,6 +5,8 @@
  *      Author: gspc
  */
 
+#include "mot_pap.h"
+
 #include <stdint.h>
 #include "board.h"
 #include "encoders.h"
@@ -22,7 +24,7 @@ int count_a = 0;
 void GPIO5_IRQHandler(void)
 {
 	Chip_PININT_ClearIntStatus(LPC_GPIO_PIN_INT, PININTCH(5));
-	++count_a;
+	mot_pap_update_position(&x_axis);
 }
 
 void GPIO6_IRQHandler(void)
