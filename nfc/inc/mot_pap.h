@@ -65,7 +65,6 @@ struct mot_pap {
 	int32_t time_delta;
 	int32_t current_freq;
 	int32_t encoder_count;
-	int32_t uno;
 	bool already_there;
 	bool stalled;
 	int last_pos;
@@ -106,14 +105,7 @@ void mot_pap_stop(struct mot_pap *me);
 
 void mot_pap_isr(struct mot_pap *me);
 
-static inline void mot_pap_update_position(struct mot_pap *me) {
-//	if (me->dir == MOT_PAP_DIRECTION_CW){
-//		++me->encoder_count;
-//	}else {
-//		--me->encoder_count;
-//	}
-	me->encoder_count += me->uno;
-}
+void mot_pap_update_position(struct mot_pap *me);
 
 void mot_pap_set_offset(struct mot_pap *me, uint16_t offset);
 

@@ -83,7 +83,6 @@ void mot_pap_move_free_run(struct mot_pap *me, enum mot_pap_direction direction,
 		}
 		me->type = MOT_PAP_TYPE_FREE_RUNNING;
 		me->dir = direction;
-		me->uno = me->dir == MOT_PAP_DIRECTION_CW ? 1:-1;
 		gpio_set_pin_state(me->gpios.direction, me->dir);
 		me->requested_freq = mot_pap_free_run_freqs[speed] * 1000;
 
@@ -113,7 +112,6 @@ void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
 		}
 		me->type = MOT_PAP_TYPE_STEPS;
 		me->dir = direction;
-		me->uno = me->dir == MOT_PAP_DIRECTION_CW ? 1:-1;
 		me->half_steps_curr = 0;
 		me->step_time = step_time;
 		me->half_steps_requested = steps << 1;
@@ -173,7 +171,6 @@ void mot_pap_move_closed_loop(struct mot_pap *me, uint16_t setpoint)
 		}
 		me->type = MOT_PAP_TYPE_CLOSED_LOOP;
 		me->dir = dir;
-		me->uno = dir == MOT_PAP_DIRECTION_CW ? 1:-1;
 		gpio_set_pin_state(me->gpios.direction, me->dir);
 		me->requested_freq = MOT_PAP_MAX_FREQ;
 		tmr_stop(&(me->tmr));
@@ -339,6 +336,20 @@ void mot_pap_isr(struct mot_pap *me)
  * @brief 	updates the current position from encoder
  * @param 	me : struct mot_pap pointer
  */
+
+void mot_pap_update_position(struct mot_pap *me)
+{
+
+void mot_pap_update_position(struct mot_pap *me) {
+	if (me->dir == MOT_PAP_DIRECTION_CW){
+		++me->encoder_count;
+	}else {
+		--me->encoder_count;
+	}
+
+//	me->dir == MOT_PAP_DIRECTION_CW ? ++me->encoder_count:--me->encoder_count;
+
+}
 
 /**
  * @brief	sets axis offset
