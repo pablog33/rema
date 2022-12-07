@@ -25,7 +25,7 @@ void y_axis_init()
 {
 	y_axis.name = "y_axis";
 	y_axis.type = MOT_PAP_TYPE_STOP;
-	y_axis.last_dir = MOT_PAP_DIRECTION_CW;
+//	y_axis.last_dir = MOT_PAP_DIRECTION_CW;
 	y_axis.half_pulses = 0;
 	y_axis.offset = 41230;
 

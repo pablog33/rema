@@ -25,7 +25,7 @@ void z_axis_init()
 {
 	z_axis.name = "z_axis";
 	z_axis.type = MOT_PAP_TYPE_STOP;
-	z_axis.last_dir = MOT_PAP_DIRECTION_CW;
+//	z_axis.last_dir = MOT_PAP_DIRECTION_CW;
 	z_axis.half_pulses = 0;
 	z_axis.offset = 41230;
 

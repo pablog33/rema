@@ -28,8 +28,7 @@ static const uint32_t mot_pap_free_run_freqs[] = { 0, 5, 15, 25, 50, 75, 100,
 
 QueueHandle_t mot_pap_supervisor_task_queue = NULL;
 
-void mot_pap_init()
-{
+void mot_pap_init() {
 	mot_pap_supervisor_task_queue = xQueueCreate(1, sizeof(struct mot_pap*));
 
 	if (mot_pap_supervisor_task_queue != NULL) {
@@ -47,8 +46,7 @@ void mot_pap_init()
  * @returns	MOT_PAP_DIRECTION_CW if error is positive
  * @returns	MOT_PAP_DIRECTION_CCW if error is negative
  */
-enum mot_pap_direction mot_pap_direction_calculate(int32_t error)
-{
+enum mot_pap_direction mot_pap_direction_calculate(int32_t error) {
 	return error < 0 ? MOT_PAP_DIRECTION_CW : MOT_PAP_DIRECTION_CCW;
 }
 
@@ -57,8 +55,7 @@ enum mot_pap_direction mot_pap_direction_calculate(int32_t error)
  * @param 	speed : the requested speed
  * @returns	true if speed is in the allowed range
  */
-bool mot_pap_free_run_speed_ok(uint32_t speed)
-{
+bool mot_pap_free_run_speed_ok(uint32_t speed) {
 	return ((speed > 0) && (speed <= MOT_PAP_MAX_SPEED_FREE_RUN));
 }
 
@@ -70,8 +67,7 @@ bool mot_pap_free_run_speed_ok(uint32_t speed)
  * @returns	nothing
  */
 void mot_pap_move_free_run(struct mot_pap *me, enum mot_pap_direction direction,
-		int speed)
-{
+		int speed) {
 	if (mot_pap_free_run_speed_ok(speed)) {
 		me->stalled = false; // If a new command was received, assume we are not stalled
 		me->stalled_counter = 0;
@@ -81,6 +77,7 @@ void mot_pap_move_free_run(struct mot_pap *me, enum mot_pap_direction direction,
 			tmr_stop(&(me->tmr));
 			vTaskDelay(pdMS_TO_TICKS(MOT_PAP_DIRECTION_CHANGE_DELAY_MS));
 		}
+
 		me->type = MOT_PAP_TYPE_FREE_RUNNING;
 		me->dir = direction;
 		gpio_set_pin_state(me->gpios.direction, me->dir);
@@ -99,23 +96,19 @@ void mot_pap_move_free_run(struct mot_pap *me, enum mot_pap_direction direction,
 
 void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
 		uint32_t speed, uint32_t steps, uint32_t step_time,
-		uint32_t step_amplitude_divider)
-{
+		uint32_t step_amplitude_divider) {
 	if (mot_pap_free_run_speed_ok(speed)) {
 		me->stalled = false; // If a new command was received, assume we are not stalled
 		me->stalled_counter = 0;
 		me->already_there = false;
+		me->stop = false;
 
-		if ((me->dir != direction) && (me->type != MOT_PAP_TYPE_STOP)) {
-			tmr_stop(&(me->tmr));
-			vTaskDelay(pdMS_TO_TICKS(MOT_PAP_DIRECTION_CHANGE_DELAY_MS));
-		}
 		me->type = MOT_PAP_TYPE_STEPS;
 		me->dir = direction;
 		me->half_steps_curr = 0;
 		me->step_time = step_time;
 		me->half_steps_requested = steps << 1;
-		gpio_set_pin_state(me->gpios.direction, me->dir);
+
 		me->requested_freq = mot_pap_free_run_freqs[speed] * 1000;
 		me->freq_delta = me->requested_freq / step_amplitude_divider;
 		me->freq_slope_relation_incr_to_decr = 3;
@@ -128,12 +121,19 @@ void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
 		me->ticks_last_time = xTaskGetTickCount();
 		x_zs = false;
 
-		tmr_stop(&(me->tmr));
-		tmr_set_freq(&(me->tmr), me->current_freq);
-		tmr_start(&(me->tmr));
-		lDebug(Info, "%s: STEPS RUN, speed: %u, direction: %s", me->name,
-				me->requested_freq,
-				me->dir == MOT_PAP_DIRECTION_CW ? "CW" : "CCW");
+		if ((me->dir != direction) && (me->type != MOT_PAP_TYPE_STOP)) {
+			me->dir_chg_req = true;
+			me->stop = true;
+		} else {
+			gpio_set_pin_state(me->gpios.direction, me->dir);
+
+			tmr_stop(&(me->tmr));
+			tmr_set_freq(&(me->tmr), me->current_freq);
+			tmr_start(&(me->tmr));
+			lDebug(Info, "%s: STEPS RUN, speed: %u, direction: %s", me->name,
+					me->requested_freq,
+					me->dir == MOT_PAP_DIRECTION_CW ? "CW" : "CCW");
+		}
 	} else {
 		lDebug(Warn, "%s: chosen speed out of bounds %i", me->name, speed);
 	}
@@ -145,8 +145,7 @@ void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
  * @param 	setpoint	: the resolver value to reach
  * @returns	nothing
  */
-void mot_pap_move_closed_loop(struct mot_pap *me, uint16_t setpoint)
-{
+void mot_pap_move_closed_loop(struct mot_pap *me, uint16_t setpoint) {
 	int32_t error;
 	enum mot_pap_direction dir;
 	me->stalled = false; // If a new command was received, assume we are not stalled
@@ -184,8 +183,7 @@ void mot_pap_move_closed_loop(struct mot_pap *me, uint16_t setpoint)
  * @param 	me	: struct mot_pap pointer
  * @returns	nothing
  */
-void mot_pap_stop(struct mot_pap *me)
-{
+void mot_pap_stop(struct mot_pap *me) {
 	me->type = MOT_PAP_TYPE_STOP;
 	tmr_stop(&(me->tmr));
 	lDebug(Info, "%s: STOP", me->name);
@@ -197,8 +195,7 @@ void mot_pap_stop(struct mot_pap *me)
  * @returns nothing
  * @note	to be called by the deferred interrupt task handler
  */
-void mot_pap_supervisor_task()
-{
+void mot_pap_supervisor_task() {
 	while (true) {
 		struct mot_pap *me;
 
@@ -244,7 +241,8 @@ void mot_pap_supervisor_task()
 									me->posAct > (me->posCmdMiddle) :
 									me->posAct < (me->posCmdMiddle);
 
-				if (!me->max_speed_reached && (!first_half_passed) && !x_zs) {
+				if (!me->max_speed_reached && (!first_half_passed)
+						&& !me->stop) {
 					me->current_freq += (me->freq_delta);
 					if (me->current_freq >= me->requested_freq) {
 						me->current_freq = me->requested_freq;
@@ -258,6 +256,10 @@ void mot_pap_supervisor_task()
 					}
 				}
 
+				if (x_zs) {
+					me->stop = true;
+				}
+
 				int distance_left;
 				if (me->type == MOT_PAP_TYPE_STEPS)
 					distance_left = me->half_steps_requested
@@ -268,12 +270,14 @@ void mot_pap_supervisor_task()
 
 				if ((me->max_speed_reached
 						&& distance_left <= me->max_speed_reached_distance)
-						|| (!me->max_speed_reached && first_half_passed) || x_zs) {
+						|| (!me->max_speed_reached && first_half_passed)
+						|| me->stop) {
 					me->current_freq -= (me->freq_delta);
 					if (me->current_freq <= me->freq_delta) {
 						me->current_freq = me->freq_delta;
-						if (x_zs){
+						if (me->stop) {
 							tmr_stop(&(me->tmr));
+							me->type = MOT_PAP_TYPE_STOP;
 							goto end;
 						}
 					}
@@ -294,13 +298,21 @@ void mot_pap_supervisor_task()
  * @brief 	function called by the timer ISR to generate the output pulses
  * @param 	me : struct mot_pap pointer
  */
-void mot_pap_isr(struct mot_pap *me)
-{
+void mot_pap_isr(struct mot_pap *me) {
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 	me->posAct = count_a;
 
 	if (me->type == MOT_PAP_TYPE_STEPS) {
 		me->already_there = (me->half_steps_curr >= me->half_steps_requested);
+	}
+
+	if (me->dir_chg_req && me->type == MOT_PAP_TYPE_STOP) {
+		gpio_set_pin_state(me->gpios.direction, me->dir);
+
+		tmr_stop(&(me->tmr));
+		tmr_set_freq(&(me->tmr), me->freq_delta);
+		tmr_start(&(me->tmr));
+
 	}
 
 	int error;
@@ -337,13 +349,10 @@ void mot_pap_isr(struct mot_pap *me)
  * @param 	me : struct mot_pap pointer
  */
 
-void mot_pap_update_position(struct mot_pap *me)
-{
-
 void mot_pap_update_position(struct mot_pap *me) {
-	if (me->dir == MOT_PAP_DIRECTION_CW){
+	if (me->dir == MOT_PAP_DIRECTION_CW) {
 		++me->encoder_count;
-	}else {
+	} else {
 		--me->encoder_count;
 	}
 
@@ -356,8 +365,7 @@ void mot_pap_update_position(struct mot_pap *me) {
  * @param 	offset		: RDC position for 0 degrees
  * @returns	nothing
  */
-void mot_pap_set_offset(struct mot_pap *me, uint16_t offset)
-{
+void mot_pap_set_offset(struct mot_pap *me, uint16_t offset) {
 	me->offset = offset;
 }
 
@@ -365,14 +373,12 @@ void mot_pap_set_offset(struct mot_pap *me, uint16_t offset)
  * @brief	returns status of the X axis task.
  * @returns copy of status structure of the task
  */
-struct mot_pap* mot_pap_get_status(struct mot_pap *me)
-{
+struct mot_pap* mot_pap_get_status(struct mot_pap *me) {
 	mot_pap_read_corrected_pos(me);
 	return me;
 }
 
-JSON_Value* mot_pap_json(struct mot_pap *me)
-{
+JSON_Value* mot_pap_json(struct mot_pap *me) {
 	JSON_Value *ans = json_value_init_object();
 	json_object_set_number(json_value_get_object(ans), "posCmd", me->posCmd);
 	json_object_set_number(json_value_get_object(ans), "posAct", me->posAct);
