@@ -1,5 +1,5 @@
-#ifndef Z_AXIS_H_
-#define Z_AXIS_H_
+#ifndef X_ZS_AXIS_H_
+#define X_ZS_AXIS_H_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -10,13 +10,10 @@
 extern "C" {
 #endif
 
-// Declaration needed because TEST_GUI calls this IRQ handler as a standard function
-void TIMER3_IRQHandler(void);
-
-void z_axis_init();
+void x_zs_init();
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* Z_AXIS_H_ */
+#endif /* X_ZS_AXIS_H_ */

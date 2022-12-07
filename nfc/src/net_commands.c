@@ -164,7 +164,7 @@ JSON_Value* axis_free_run_steps_cmd(JSON_Value const *pars)
 
 			enum mot_pap_direction direction = strcmp(dir, "CW") == 0 ?
 					MOT_PAP_DIRECTION_CW : MOT_PAP_DIRECTION_CCW;
-			struct mot_pap *axis_;
+			struct mot_pap *axis_ = NULL;
 			switch (*axis) {
 				case 'x':
 				case 'X':
@@ -181,9 +181,11 @@ JSON_Value* axis_free_run_steps_cmd(JSON_Value const *pars)
 				default:
 					break;
 			}
-			mot_pap_move_steps (axis_, direction, (int)speed, (int)steps, (int)step_time, (int)step_amplitude_divider);
+			if (axis_) {
+				mot_pap_move_steps (axis_, direction, (int)speed, (int)steps, (int)step_time, (int)step_amplitude_divider);
 
-			lDebug(Info, "AXIS_FREE_RUN DIR: %s, SPEED: %d", dir, (int ) speed);
+				lDebug(Info, "AXIS_FREE_RUN DIR: %s, SPEED: %d", dir, (int ) speed);
+			}
 		}
 		JSON_Value *ans = json_value_init_object();
 		json_object_set_boolean(json_value_get_object(ans), "ACK", true);

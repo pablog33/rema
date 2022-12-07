@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <x_axis.h>
+#include <y_axis.h>
+#include <z_axis.h>
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -56,7 +58,7 @@ static void prvSetupHardware(void)
 	//settings_erase();
 	relay_init();
 	mot_pap_init();
-	ZS_init();
+	x_zs_init();
 	x_axis_init();
 	y_axis_init();
 	z_axis_init();

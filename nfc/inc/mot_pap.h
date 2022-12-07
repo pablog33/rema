@@ -32,7 +32,10 @@ enum mot_pap_direction {
 };
 
 enum mot_pap_type {
-	MOT_PAP_TYPE_FREE_RUNNING, MOT_PAP_TYPE_CLOSED_LOOP, MOT_PAP_TYPE_STOP, MOT_PAP_TYPE_STEPS
+	MOT_PAP_TYPE_FREE_RUNNING,
+	MOT_PAP_TYPE_CLOSED_LOOP,
+	MOT_PAP_TYPE_STOP,
+	MOT_PAP_TYPE_STEPS
 };
 
 /**
@@ -50,37 +53,41 @@ struct mot_pap_gpios {
  */
 struct mot_pap {
 	char *name;
+
 	enum mot_pap_type type;
 	enum mot_pap_direction dir;
-	int32_t posAct;
-	int32_t posCmd;
-	int32_t posCmdMiddle;
-	int32_t requested_freq;
-	int32_t freq_increment;
-	int32_t freq_decrement;
-	int32_t step_time;
-	int32_t freq_slope_relation_incr_to_decr;
-	int32_t freq_delta;
-	int32_t freq_delta_divider;
-	int32_t time_delta;
-	int32_t current_freq;
-	int32_t encoder_count;
+
+	bool max_speed_reached;
 	bool already_there;
 	bool stalled;
 	bool stop;
-	int last_pos;
-	uint32_t stalled_counter;
-	struct mot_pap_gpios gpios;
-	struct tmr tmr;
 	bool dir_chg_req;
-	int half_pulses;			// counts steps from the last call to supervisor task
-	int offset;
+
+	int posAct;
+	int posCmd;
+	int posCmdMiddle;
+
+	int requested_freq;
+	int current_freq;
+	int freq_delta;
+
+	int step_time;
 	int half_steps_requested;
 	int half_steps_curr;
 	int half_steps_to_middle;
+
+	int encoder_count;
+	int stalled_counter;
+	int half_pulses;	// counts steps from the last call to supervisor task
+	int offset;
+
 	int max_speed_reached_distance;
 	int ticks_last_time;
-	bool max_speed_reached;
+	int last_pos;
+
+	struct mot_pap_gpios gpios;
+	struct tmr tmr;
+
 };
 
 void mot_pap_init();
@@ -100,7 +107,7 @@ void mot_pap_move_free_run(struct mot_pap *me, enum mot_pap_direction direction,
 void mot_pap_move_closed_loop(struct mot_pap *status, uint16_t setpoint);
 
 void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
-		uint32_t speed, uint32_t steps, uint32_t step_time, uint32_t step_amplitude_divider);
+		int speed, int steps, int step_time, int step_amplitude_divider);
 
 void mot_pap_stop(struct mot_pap *me);
 
@@ -112,7 +119,7 @@ void mot_pap_set_offset(struct mot_pap *me, uint16_t offset);
 
 uint32_t mot_pap_read_on_condition(void);
 
-JSON_Value *mot_pap_json(struct mot_pap *me);
+JSON_Value* mot_pap_json(struct mot_pap *me);
 
 #ifdef __cplusplus
 }
