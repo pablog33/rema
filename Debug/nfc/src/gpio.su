@@ -1,0 +1,4 @@
+gpio.c:14:6:gpio_init_output	8	static
+gpio.c:23:6:gpio_init_input	8	static
+gpio.c:33:6:gpio_set_pin_state	0	static
+gpio.c:41:6:gpio_toggle	0	static

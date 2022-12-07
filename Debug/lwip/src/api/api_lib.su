@@ -1,0 +1,17 @@
+api_lib.c:342:1:netconn_recv_data	48	static
+api_lib.c:68:1:netconn_new_with_proto_and_callback	40	static
+api_lib.c:103:1:netconn_delete	32	static
+api_lib.c:135:1:netconn_getaddr	40	static
+api_lib.c:166:1:netconn_bind	40	static
+api_lib.c:192:1:netconn_connect	40	static
+api_lib.c:217:1:netconn_disconnect	40	static
+api_lib.c:241:1:netconn_listen_with_backlog	40	static
+api_lib.c:277:1:netconn_accept	24	static
+api_lib.c:437:1:netconn_recv_tcp_pbuf	48	static
+api_lib.c:454:1:netconn_recv	24	static
+api_lib.c:517:1:netconn_recved	32	static
+api_lib.c:549:1:netconn_sendto	40	static
+api_lib.c:567:1:netconn_send	40	static
+api_lib.c:598:1:netconn_write_partly	40	static
+api_lib.c:689:1:netconn_close	40	static
+api_lib.c:702:1:netconn_shutdown	40	static

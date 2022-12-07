@@ -1,0 +1,5 @@
+debug.h:136:21:make_message	32	static
+settings.c:33:6:settings_init	0	static
+settings.c:42:6:settings_erase	24	static
+settings.c:52:6:settings_save	48	static
+settings.c:67:17:settings_read	56	static

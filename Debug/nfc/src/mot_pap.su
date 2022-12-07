@@ -1,0 +1,15 @@
+debug.h:136:21:make_message	32	static
+mot_pap.c:258:6:mot_pap_supervisor_task	64	static
+mot_pap.c:77:6:mot_pap_init	32	static
+mot_pap.c:102:24:mot_pap_direction_calculate	0	static
+mot_pap.c:112:6:mot_pap_free_run_speed_ok	0	static
+mot_pap.c:124:6:mot_pap_move_free_run	56	static
+mot_pap.c:153:6:mot_pap_move_steps	56	static
+mot_pap.c:206:6:mot_pap_move_closed_loop	56	static
+mot_pap.c:245:6:mot_pap_stop	40	static
+mot_pap.c:39:13:mot_pap_task	56	static
+mot_pap.c:365:6:mot_pap_isr	32	static
+mot_pap.c:417:6:mot_pap_update_position	0	static
+mot_pap.c:434:6:mot_pap_set_offset	0	static
+mot_pap.c:443:17:mot_pap_get_status	8	static
+mot_pap.c:449:13:mot_pap_json	16	static

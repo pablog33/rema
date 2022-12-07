@@ -1,0 +1,4 @@
+encoders.c:26:6:GPIO5_IRQHandler	0	static
+encoders.c:32:6:GPIO6_IRQHandler	0	static
+encoders.c:38:6:GPIO7_IRQHandler	0	static
+encoders.c:48:6:encoders_init	96	static

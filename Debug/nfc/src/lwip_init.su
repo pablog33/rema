@@ -1,0 +1,2 @@
+lwip_init.c:48:13:tcpip_init_done_signal	0	static
+lwip_init.c:55:6:vStackIpSetup	80	static

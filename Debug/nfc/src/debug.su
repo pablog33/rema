@@ -1,0 +1,5 @@
+debug.c:21:6:debugInit	8	static
+debug.c:32:6:debugLocalSetLevel	0	static
+debug.c:41:6:debugNetSetLevel	0	static
+debug.c:50:6:debugToFile	16	static
+debug.c:61:6:debugClose	16	static

@@ -1,0 +1,3 @@
+relay.c:18:6:relay_init	24	static
+relay.c:37:6:relay_main_pwr	16	static
+relay.c:47:6:relay_spare_led	16	static

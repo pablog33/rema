@@ -1,0 +1,3 @@
+mem_check.c:9:13:mem_check_task	8	static
+debug.h:136:21:make_message.constprop	32	static
+mem_check.c:23:6:mem_check_init	32	static
