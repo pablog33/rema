@@ -25,7 +25,7 @@ void x_axis_init()
 {
 	x_axis.name = "x_axis";
 	x_axis.type = MOT_PAP_TYPE_STOP;
-	x_axis.last_dir = MOT_PAP_DIRECTION_CW;
+//	x_axis.last_dir = MOT_PAP_DIRECTION_CW;
 	x_axis.half_pulses = 0;
 	x_axis.offset = 41230;
 	x_axis.encoder_count = 0;

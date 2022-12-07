@@ -67,11 +67,12 @@ struct mot_pap {
 	int32_t encoder_count;
 	bool already_there;
 	bool stalled;
+	bool stop;
 	int last_pos;
 	uint32_t stalled_counter;
 	struct mot_pap_gpios gpios;
 	struct tmr tmr;
-	enum mot_pap_direction last_dir;
+	bool dir_chg_req;
 	int half_pulses;			// counts steps from the last call to supervisor task
 	int offset;
 	int half_steps_requested;
