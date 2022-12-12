@@ -1,3 +1,0 @@
-wait.c:13:6:wait_10cycles	0	static
-wait.c:31:6:wait_cycles	0	static
-wait.c:48:6:wait_ms	4	static

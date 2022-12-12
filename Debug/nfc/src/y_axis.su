@@ -1,2 +1,0 @@
-y_axis.c:24:6:y_axis_init	32	static
-y_axis.c:52:6:TIMER2_IRQHandler	8	static

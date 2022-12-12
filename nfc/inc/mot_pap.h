@@ -39,6 +39,19 @@ enum mot_pap_type {
 };
 
 /**
+ * @struct 	mot_pap_msg
+ * @brief	messages to axis tasks.
+ */
+struct mot_pap_msg {
+	enum mot_pap_type type;
+	enum mot_pap_direction free_run_direction;
+	uint32_t free_run_speed;
+	uint16_t closed_loop_setpoint;
+	uint32_t steps;
+	struct mot_pap *axis;
+};
+
+/**
  * @struct 	mot_pap_gpios
  * @brief	pointers to functions to handle GPIO lines of this stepper motor.
  */

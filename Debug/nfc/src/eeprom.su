@@ -1,4 +1,0 @@
-eeprom.c:5:6:EEPROM_init	8	static
-eeprom.c:14:6:EEPROM_Read	16	static
-eeprom.c:25:6:EEPROM_Erase	0	static
-eeprom.c:35:6:EEPROM_Write	16	static

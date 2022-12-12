@@ -1,5 +1,0 @@
-main.c:84:6:msDelay	0	static
-main.c:93:5:main	16	static
-main.c:111:6:vApplicationStackOverflowHook	0	static
-main.c:134:6:vAssertCalled	24	static
-main.c:151:6:prvGetRegistersFromStack	32	static

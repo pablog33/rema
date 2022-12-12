@@ -17,6 +17,7 @@ extern bool stall_detection;
 extern int count_a;
 extern bool x_zs;
 
+QueueHandle_t mot_pap_queue = NULL;
 SemaphoreHandle_t mot_pap_steps_stop = NULL;
 
 // Frequencies expressed in Khz
@@ -28,8 +29,55 @@ static const uint32_t mot_pap_free_run_freqs[] = { 0, 5, 15, 25, 50, 75, 100,
 
 QueueHandle_t mot_pap_supervisor_task_queue = NULL;
 
+
+/**
+ * @brief 	handles the X axis movement.
+ * @param 	par		: unused
+ * @returns	never
+ * @note	Receives commands from x_axis_queue
+ */
+static void mot_pap_task(void *par) {
+	struct mot_pap_msg *msg_rcv;
+
+	while (true) {
+		if (xQueueReceive(mot_pap_queue, &msg_rcv, portMAX_DELAY) == pdPASS) {
+			lDebug(Info, "%s command received", msg_rcv->axis->name);
+
+			msg_rcv->axis->stalled = false; // If a new command was received, assume we are not stalled
+			msg_rcv->axis->stalled_counter = 0;
+			msg_rcv->axis->already_there = false;
+
+			switch (msg_rcv->type) {
+			case MOT_PAP_TYPE_FREE_RUNNING:
+				mot_pap_move_free_run(msg_rcv->axis,
+						msg_rcv->free_run_direction, msg_rcv->free_run_speed);
+				break;
+
+			case MOT_PAP_TYPE_CLOSED_LOOP:
+				mot_pap_move_closed_loop(msg_rcv->axis,
+						msg_rcv->closed_loop_setpoint);
+				break;
+
+			case MOT_PAP_TYPE_STEPS:
+				mot_pap_move_steps(msg_rcv->axis, msg_rcv->free_run_direction,
+						msg_rcv->free_run_speed, msg_rcv->steps, 100, 50);
+				break;
+
+			default:
+				mot_pap_stop(msg_rcv->axis);
+				break;
+			}
+
+			vPortFree(msg_rcv);
+			msg_rcv = NULL;
+		}
+	}
+}
+
 void mot_pap_init()
 {
+	mot_pap_queue = xQueueCreate(5, sizeof(struct mot_pap_msg*));
+	
 	mot_pap_supervisor_task_queue = xQueueCreate(1, sizeof(struct mot_pap*));
 
 	if (mot_pap_supervisor_task_queue != NULL) {
@@ -38,7 +86,11 @@ void mot_pap_init()
 		NULL, MOT_PAP_SUPERVISOR_TASK_PRIORITY, NULL);
 		lDebug(Info, "supervisor task created");
 	}
+	
+	xTaskCreate(mot_pap_task, "mot_pap", 2048, NULL,
+	MOT_PAP_TASK_PRIORITY, NULL);
 
+	lDebug(Info, "mot_pap: task created");
 }
 
 /**
@@ -108,7 +160,7 @@ void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
 		me->already_there = false;
 		me->stop = false;
 
-		if ((me->dir != direction) && me->type != MOT_PAP_TYPE_STOP) {
+		if (me->type != MOT_PAP_TYPE_STOP) {
 			//me->dir_chg_req = true;
 			me->stop = true;
 			//me->dir = direction;

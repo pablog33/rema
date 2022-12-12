@@ -1,3 +1,0 @@
-debug.h:136:21:make_message	32	static
-tcp_server.c:76:13:tcp_server_task	1288	static
-tcp_server.c:168:6:stackIp_ThreadInit	16	static

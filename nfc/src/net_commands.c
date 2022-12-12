@@ -164,27 +164,36 @@ JSON_Value* axis_free_run_steps_cmd(JSON_Value const *pars)
 
 			enum mot_pap_direction direction = strcmp(dir, "CW") == 0 ?
 					MOT_PAP_DIRECTION_CW : MOT_PAP_DIRECTION_CCW;
-			struct mot_pap *axis_ = NULL;
+
+
+			struct mot_pap_msg *msg = (struct mot_pap_msg*) pvPortMalloc(
+					sizeof(struct mot_pap_msg));
+
+			msg->type = MOT_PAP_TYPE_STEPS;
+			msg->free_run_direction = (
+					strcmp(dir, "CW") == 0 ?
+							MOT_PAP_DIRECTION_CW : MOT_PAP_DIRECTION_CCW);
+			msg->free_run_speed = (int) speed;
+			msg->steps = (int) steps;
+
 			switch (*axis) {
 				case 'x':
 				case 'X':
-						axis_ = &x_axis;
+						msg->axis = &x_axis;
 						break;
 				case 'y':
 				case 'Y':
-						axis_ = &y_axis;
+						msg->axis = &y_axis;
 						break;
 				case 'z':
 				case 'Z':
-						axis_ = &z_axis;
+						msg->axis = &z_axis;
 					break;
 				default:
 					break;
 			}
-			if (axis_) {
-				mot_pap_move_steps (axis_, direction, (int)speed, (int)steps, (int)step_time, (int)step_amplitude_divider);
-
-				lDebug(Info, "AXIS_FREE_RUN DIR: %s, SPEED: %d", dir, (int ) speed);
+			if (xQueueSend(mot_pap_queue, &msg, portMAX_DELAY) == pdPASS) {
+				lDebug(Debug, " Comando enviado a arm.c exitoso!");
 			}
 		}
 		JSON_Value *ans = json_value_init_object();

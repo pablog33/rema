@@ -1,2 +1,0 @@
-temperature.c:16:6:temperature_init	16	static
-temperature.c:30:10:temperature_read	24	static

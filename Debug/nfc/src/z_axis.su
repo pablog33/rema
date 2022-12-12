@@ -1,2 +1,0 @@
-z_axis.c:24:6:z_axis_init	32	static
-z_axis.c:55:6:TIMER3_IRQHandler	8	static
