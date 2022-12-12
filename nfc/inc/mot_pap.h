@@ -74,7 +74,6 @@ struct mot_pap {
 	bool already_there;
 	bool stalled;
 	bool stop;
-	bool dir_chg_req;
 
 	int posAct;
 	int posCmd;
@@ -100,7 +99,7 @@ struct mot_pap {
 
 	struct mot_pap_gpios gpios;
 	struct tmr tmr;
-
+	SemaphoreHandle_t wait_until_stop_semaphore;
 };
 
 void mot_pap_init();

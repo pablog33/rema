@@ -161,11 +161,9 @@ void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
 		me->stop = false;
 
 		if (me->type != MOT_PAP_TYPE_STOP) {
-			//me->dir_chg_req = true;
 			me->stop = true;
-			//me->dir = direction;
-			mot_pap_steps_stop = xSemaphoreCreateBinary();
-			xSemaphoreTake(mot_pap_steps_stop, portMAX_DELAY);
+			me->wait_until_stop_semaphore = xSemaphoreCreateBinary();
+			xSemaphoreTake(me->wait_until_stop_semaphore, portMAX_DELAY);
 		}
 
 		me->stop = false;
@@ -339,8 +337,8 @@ void mot_pap_supervisor_task()
 						if (me->stop) {
 							tmr_stop(&(me->tmr));
 							me->type = MOT_PAP_TYPE_STOP;
-							if (mot_pap_steps_stop) {
-								xSemaphoreGive(mot_pap_steps_stop);
+							if (me->wait_until_stop_semaphore) {
+								xSemaphoreGive(me->wait_until_stop_semaphore);
 							}
 							goto end;
 						}
@@ -370,15 +368,6 @@ void mot_pap_isr(struct mot_pap *me)
 	if (me->type == MOT_PAP_TYPE_STEPS) {
 		me->already_there = (me->half_steps_curr >= me->half_steps_requested);
 	}
-
-//	if (me->dir_chg_req && me->type == MOT_PAP_TYPE_STOP) {
-//		gpio_set_pin_state(me->gpios.direction, me->dir);
-//
-//		tmr_stop(&(me->tmr));
-//		tmr_set_freq(&(me->tmr), me->freq_delta);
-//		tmr_start(&(me->tmr));
-//
-//	}
 
 	int error;
 	if (me->type == MOT_PAP_TYPE_CLOSED_LOOP) {
