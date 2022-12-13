@@ -20,7 +20,7 @@ extern "C" {
 #define MOT_PAP_CLOSED_LOOP_FREQ_MULTIPLIER  	( MOT_PAP_MAX_FREQ / 100 )
 #define MOT_PAP_MAX_SPEED_FREE_RUN				8
 #define MOT_PAP_COMPUMOTOR_MAX_FREQ				300000
-#define MOT_PAP_DIRECTION_CHANGE_DELAY_MS		500
+#define MOT_PAP_DIRECTION_CHANGE_DELAY_MS		5000
 
 #define MOT_PAP_SUPERVISOR_RATE    				625	//2 means one step
 #define MOT_PAP_POS_PROXIMITY_THRESHOLD			100
@@ -46,9 +46,9 @@ enum mot_pap_type {
 struct mot_pap_msg {
 	enum mot_pap_type type;
 	enum mot_pap_direction free_run_direction;
-	uint32_t free_run_speed;
-	uint16_t closed_loop_setpoint;
-	uint32_t steps;
+	int free_run_speed;
+	int closed_loop_setpoint;
+	int steps;
 	struct mot_pap *axis;
 };
 
@@ -76,8 +76,8 @@ struct mot_pap {
 	bool stalled;
 	volatile bool stop;
 
-	int posAct;
-	int posCmd;
+	volatile int pos_act;
+	int pos_cmd;
 	int posCmdMiddle;
 
 	int requested_freq;
@@ -89,7 +89,6 @@ struct mot_pap {
 	int half_steps_curr;
 	int half_steps_to_middle;
 
-	int encoder_count;
 	int stalled_counter;
 	int half_pulses;	// counts steps from the last call to supervisor task
 	int offset;
@@ -121,7 +120,7 @@ void mot_pap_supervisor_task();
 void mot_pap_move_free_run(struct mot_pap *me, enum mot_pap_direction direction,
 		int speed);
 
-void mot_pap_move_closed_loop(struct mot_pap *status, uint16_t setpoint);
+void mot_pap_move_closed_loop(struct mot_pap *status, int setpoint);
 
 void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
 		int speed, int steps, int step_time, int step_amplitude_divider);
@@ -132,7 +131,7 @@ void mot_pap_isr(struct mot_pap *me);
 
 void mot_pap_update_position(struct mot_pap *me);
 
-void mot_pap_set_offset(struct mot_pap *me, uint16_t offset);
+void mot_pap_set_offset(struct mot_pap *me, int offset);
 
 uint32_t mot_pap_read_on_condition(void);
 

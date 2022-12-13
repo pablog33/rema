@@ -26,7 +26,7 @@ void y_axis_init()
 	y_axis.name = "y_axis";
 	y_axis.type = MOT_PAP_TYPE_STOP;
 	y_axis.half_pulses = 0;
-	y_axis.encoder_count = 0;
+	y_axis.pos_act = 0;
 
 	y_axis.gpios.direction = (struct gpio_entry) { 4, 5, SCU_MODE_FUNC0, 2, 5 };	//DOUT1 P4_5 	PIN10  	GPIO2[5]   Y_AXIS_DIR
 	y_axis.gpios.step = (struct gpio_entry) { 4, 9, SCU_MODE_FUNC4, 5, 13 };		//DOUT5 P4_9 	PIN33  	GPIO5[13]  Y_AXIS_STEP

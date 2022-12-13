@@ -14,10 +14,9 @@
 #include "tmr.h"
 
 extern bool stall_detection;
-extern int count_a;
 
 // Frequencies expressed in Khz
-static const uint32_t mot_pap_free_run_freqs[] = { 0, 5, 15, 25, 50, 75, 100,
+static const int mot_pap_free_run_freqs[] = { 0, 5, 15, 25, 50, 75, 100,
 		125 };
 
 
@@ -28,7 +27,7 @@ static const uint32_t mot_pap_free_run_freqs[] = { 0, 5, 15, 25, 50, 75, 100,
  * @returns	MOT_PAP_DIRECTION_CCW if error is negative
  */
 enum mot_pap_direction mot_pap_direction_calculate(int32_t error) {
-	return error < 0 ? MOT_PAP_DIRECTION_CW : MOT_PAP_DIRECTION_CCW;
+	return error < 0 ? MOT_PAP_DIRECTION_CCW : MOT_PAP_DIRECTION_CW;
 }
 
 /**
@@ -36,7 +35,7 @@ enum mot_pap_direction mot_pap_direction_calculate(int32_t error) {
  * @param 	speed : the requested speed
  * @returns	true if speed is in the allowed range
  */
-bool mot_pap_free_run_speed_ok(uint32_t speed) {
+bool mot_pap_free_run_speed_ok(int speed) {
 	return ((speed > 0) && (speed <= MOT_PAP_MAX_SPEED_FREE_RUN));
 }
 
@@ -123,27 +122,27 @@ void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
  * @param 	setpoint	: the resolver value to reach
  * @returns	nothing
  */
-void mot_pap_move_closed_loop(struct mot_pap *me, uint16_t setpoint) {
+void mot_pap_move_closed_loop(struct mot_pap *me, int setpoint) {
 	int32_t error;
 	enum mot_pap_direction dir;
 	me->stalled = false; // If a new command was received, assume we are not stalled
 	me->stalled_counter = 0;
 
-	me->posCmd = setpoint;
-	lDebug(Info, "%s: CLOSED_LOOP posCmd: %i posAct: %i", me->name, me->posCmd,
-			me->posAct);
+	me->pos_cmd = setpoint;
+	lDebug(Info, "%s: CLOSED_LOOP posCmd: %i posAct: %i", me->name, me->pos_cmd,
+			me->pos_act);
 
 	//calculate position error
-	error = me->posCmd - me->posAct;
+	error = me->pos_cmd - me->pos_act;
 	me->already_there = (abs(error) < MOT_PAP_POS_THRESHOLD);
 
 	if (me->already_there) {
 		tmr_stop(&(me->tmr));
 		lDebug(Info, "%s: already there", me->name);
 	} else {
-		int out = pid_run(&(me->pid), me->posCmd, me->posAct);
+		int out = pid_run(&(me->pid), me->pos_cmd, me->pos_act);
 
-		dir = (out < 0) ? MOT_PAP_DIRECTION_CW : MOT_PAP_DIRECTION_CCW;
+		dir = mot_pap_direction_calculate(out);
 		if ((me->dir != dir) && (me->type != MOT_PAP_TYPE_STOP)) {
 			tmr_stop(&(me->tmr));
 			vTaskDelay(pdMS_TO_TICKS(MOT_PAP_DIRECTION_CHANGE_DELAY_MS));
@@ -182,7 +181,7 @@ void mot_pap_supervise(struct mot_pap *me) {
 		portMAX_DELAY) == pdPASS) {
 			if (stall_detection) {
 				if (abs(
-						(int) (me->posAct - me->last_pos)) < MOT_PAP_STALL_THRESHOLD) {
+						(int) (me->pos_act - me->last_pos)) < MOT_PAP_STALL_THRESHOLD) {
 
 					me->stalled_counter++;
 					if (me->stalled_counter >= MOT_PAP_STALL_MAX_COUNT) {
@@ -236,7 +235,7 @@ void mot_pap_supervise(struct mot_pap *me) {
 								- me->half_steps_curr;
 
 					if (me->type == MOT_PAP_TYPE_CLOSED_LOOP)
-						distance_left = me->posCmd - me->posAct;
+						distance_left = me->pos_cmd - me->pos_act;
 
 					if ((me->max_speed_reached
 							&& distance_left <= me->max_speed_reached_distance)
@@ -266,12 +265,9 @@ void mot_pap_supervise(struct mot_pap *me) {
 				/*	CLOSED LOOP	 */
 				/*****************/
 				if (me->type == MOT_PAP_TYPE_CLOSED_LOOP) {
-					int out = pid_run(&(me->pid), me->posCmd, me->posAct);
+					int out = pid_run(&(me->pid), me->pos_cmd, me->pos_act);
 
-					enum mot_pap_direction dir =
-							(out < 0) ?
-									MOT_PAP_DIRECTION_CW :
-									MOT_PAP_DIRECTION_CCW;
+					enum mot_pap_direction dir = mot_pap_direction_calculate(out);
 					if ((me->dir != dir) && (me->type != MOT_PAP_TYPE_STOP)) {
 						tmr_stop(&(me->tmr));
 						vTaskDelay(
@@ -300,7 +296,6 @@ void mot_pap_supervise(struct mot_pap *me) {
  */
 void mot_pap_isr(struct mot_pap *me) {
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-	me->posAct = count_a;
 
 	if (me->type == MOT_PAP_TYPE_STEPS) {
 		me->already_there = (me->half_steps_curr >= me->half_steps_requested);
@@ -308,7 +303,7 @@ void mot_pap_isr(struct mot_pap *me) {
 
 	int error;
 	if (me->type == MOT_PAP_TYPE_CLOSED_LOOP) {
-		error = me->posCmd - me->posAct;
+		error = me->pos_cmd - me->pos_act;
 		me->already_there = (abs((int) error) < MOT_PAP_POS_THRESHOLD);
 	}
 
@@ -333,7 +328,7 @@ void mot_pap_isr(struct mot_pap *me) {
 		portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 	}
 
-	cont: me->last_pos = me->posAct;
+	cont: me->last_pos = me->pos_act;
 }
 
 /**
@@ -343,12 +338,12 @@ void mot_pap_isr(struct mot_pap *me) {
 
 void mot_pap_update_position(struct mot_pap *me) {
 	if (me->dir == MOT_PAP_DIRECTION_CW) {
-		++me->encoder_count;
+		++me->pos_act;
 	} else {
-		--me->encoder_count;
+		--me->pos_act;
 	}
 
-//	me->dir == MOT_PAP_DIRECTION_CW ? ++me->encoder_count:--me->encoder_count;
+//	me->dir == MOT_PAP_DIRECTION_CW ? ++me->encoder_count:--me->pos_act;
 
 }
 
@@ -357,7 +352,7 @@ void mot_pap_update_position(struct mot_pap *me) {
  * @param 	offset		: RDC position for 0 degrees
  * @returns	nothing
  */
-void mot_pap_set_offset(struct mot_pap *me, uint16_t offset) {
+void mot_pap_set_offset(struct mot_pap *me, int offset) {
 	me->offset = offset;
 }
 
@@ -372,8 +367,8 @@ struct mot_pap* mot_pap_get_status(struct mot_pap *me) {
 
 JSON_Value* mot_pap_json(struct mot_pap *me) {
 	JSON_Value *ans = json_value_init_object();
-	json_object_set_number(json_value_get_object(ans), "posCmd", me->posCmd);
-	json_object_set_number(json_value_get_object(ans), "posAct", me->posAct);
+	json_object_set_number(json_value_get_object(ans), "pos_cmd", me->pos_cmd);
+	json_object_set_number(json_value_get_object(ans), "posAct", me->pos_act);
 	json_object_set_boolean(json_value_get_object(ans), "stalled", me->stalled);
 	json_object_set_number(json_value_get_object(ans), "offset", me->offset);
 	return ans;

@@ -77,7 +77,7 @@ static void x_axis_task(void *par)
 static void x_axis_supervisor_task(void *par)
 {
 	while (true) {
-		xSemaphoreTake(x_axis_supervisor_semaphore, portMAX_DELAY);
+		xSemaphoreTake(x_axis.supervisor_semaphore, portMAX_DELAY);
 		mot_pap_supervise(&x_axis);
 	}
 }
@@ -88,7 +88,7 @@ void x_axis_init() {
 	x_axis.name = "x_axis";
 	x_axis.type = MOT_PAP_TYPE_STOP;
 	x_axis.half_pulses = 0;
-	x_axis.encoder_count = 0;
+	x_axis.pos_act = 0;
 
 	x_axis.gpios.direction =
 			(struct gpio_entry ) { 2, 1, SCU_MODE_FUNC4, 5, 1 };	//DOUT0 P2_1 	PIN81  	GPIO5[1]   X_AXIS_DIR
@@ -105,13 +105,13 @@ void x_axis_init() {
 
 	tmr_init(&x_axis.tmr);
 
-	pid_init(&x_axis.pid, 1.0,						//!< Kp
-			1.0,									//!< Ki
+	pid_init(&x_axis.pid, 10.0,						//!< Kp
+			10.0,									//!< Ki
 			1.0,									//!< Kd
 			PID_DIRECT,								//!< Control type
 			100.0,									//!< Update rate (ms)
-			-100.0,									//!< Min output
-			100.0									//!< Max output
+			-125000,									//!< Min output
+			125000									//!< Max output
 			);
 
 	x_axis.supervisor_semaphore = xSemaphoreCreateBinary();

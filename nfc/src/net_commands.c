@@ -33,7 +33,7 @@ typedef struct {
 JSON_Value* telemetria_cmd(JSON_Value const *pars)
 {
 	JSON_Value *ans = json_value_init_object();
-	json_object_set_number(json_value_get_object(ans), "cuentas A", x_axis.encoder_count);
+	json_object_set_number(json_value_get_object(ans), "cuentas A", x_axis.pos_act);
 	json_object_set_number(json_value_get_object(ans), "cuentas B", count_b);
 	json_object_set_number(json_value_get_object(ans), "cuentas Z", count_z);
 	json_object_set_boolean(json_value_get_object(ans), "ZS x", x_axis.stop);
@@ -109,12 +109,46 @@ JSON_Value* stall_control_cmd(JSON_Value const *pars)
 
 JSON_Value* axis_closed_loop_cmd(JSON_Value const *pars)
 {
-	lDebug(Info, "LLAMADA axis_closed_loop_cmd");
+	if (pars && json_value_get_type(pars) == JSONObject) {
 
+		char const *axis = json_object_get_string(json_value_get_object(pars),
+				"axis");
+		double setpoint = json_object_get_number(json_value_get_object(pars),
+				"setpoint");
+
+		struct mot_pap_msg *msg = (struct mot_pap_msg*) pvPortMalloc(
+				sizeof(struct mot_pap_msg));
+
+		msg->type = MOT_PAP_TYPE_CLOSED_LOOP;
+		msg->closed_loop_setpoint = (int) setpoint;
+
+		QueueHandle_t *queue = NULL;
+
+		switch (*axis) {
+		case 'x':
+		case 'X':
+			queue = &x_axis.queue;
+			break;
+//				case 'y':
+//				case 'Y':
+//						axis_ = &y_axis_;
+//						break;
+//				case 'z':
+//				case 'Z':
+//						msg->axis = &z_axis;
+//					break;
+		default:
+			break;
+		}
+		if (xQueueSend(*queue, &msg, portMAX_DELAY) == pdPASS) {
+			lDebug(Debug, " Comando enviado a arm.c exitoso!");
+		}
+	}
 	JSON_Value *ans = json_value_init_object();
 	json_object_set_boolean(json_value_get_object(ans), "ACK", true);
 	return ans;
 }
+
 
 JSON_Value* axis_free_run_cmd(JSON_Value const *pars)
 {
