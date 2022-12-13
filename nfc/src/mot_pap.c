@@ -15,83 +15,11 @@
 
 extern bool stall_detection;
 extern int count_a;
-extern bool x_zs;
-
-QueueHandle_t mot_pap_queue = NULL;
-SemaphoreHandle_t mot_pap_steps_stop = NULL;
 
 // Frequencies expressed in Khz
 static const uint32_t mot_pap_free_run_freqs[] = { 0, 5, 15, 25, 50, 75, 100,
 		125 };
 
-#define MOT_PAP_TASK_PRIORITY ( configMAX_PRIORITIES - 1 )
-#define MOT_PAP_SUPERVISOR_TASK_PRIORITY ( configMAX_PRIORITIES - 3)
-
-QueueHandle_t mot_pap_supervisor_task_queue = NULL;
-
-
-/**
- * @brief 	handles the X axis movement.
- * @param 	par		: unused
- * @returns	never
- * @note	Receives commands from x_axis_queue
- */
-static void mot_pap_task(void *par) {
-	struct mot_pap_msg *msg_rcv;
-
-	while (true) {
-		if (xQueueReceive(mot_pap_queue, &msg_rcv, portMAX_DELAY) == pdPASS) {
-			lDebug(Info, "%s command received", msg_rcv->axis->name);
-
-			msg_rcv->axis->stalled = false; // If a new command was received, assume we are not stalled
-			msg_rcv->axis->stalled_counter = 0;
-			msg_rcv->axis->already_there = false;
-
-			switch (msg_rcv->type) {
-			case MOT_PAP_TYPE_FREE_RUNNING:
-				mot_pap_move_free_run(msg_rcv->axis,
-						msg_rcv->free_run_direction, msg_rcv->free_run_speed);
-				break;
-
-			case MOT_PAP_TYPE_CLOSED_LOOP:
-				mot_pap_move_closed_loop(msg_rcv->axis,
-						msg_rcv->closed_loop_setpoint);
-				break;
-
-			case MOT_PAP_TYPE_STEPS:
-				mot_pap_move_steps(msg_rcv->axis, msg_rcv->free_run_direction,
-						msg_rcv->free_run_speed, msg_rcv->steps, 100, 50);
-				break;
-
-			default:
-				mot_pap_stop(msg_rcv->axis);
-				break;
-			}
-
-			vPortFree(msg_rcv);
-			msg_rcv = NULL;
-		}
-	}
-}
-
-void mot_pap_init()
-{
-	mot_pap_queue = xQueueCreate(5, sizeof(struct mot_pap_msg*));
-	
-	mot_pap_supervisor_task_queue = xQueueCreate(1, sizeof(struct mot_pap*));
-
-	if (mot_pap_supervisor_task_queue != NULL) {
-		// Create the 'handler' task, which is the task to which interrupt processing is deferred
-		xTaskCreate(mot_pap_supervisor_task, "mot_pap", 2048,
-		NULL, MOT_PAP_SUPERVISOR_TASK_PRIORITY, NULL);
-		lDebug(Info, "supervisor task created");
-	}
-	
-	xTaskCreate(mot_pap_task, "mot_pap", 2048, NULL,
-	MOT_PAP_TASK_PRIORITY, NULL);
-
-	lDebug(Info, "mot_pap: task created");
-}
 
 /**
  * @brief	returns the direction of movement depending if the error is positive or negative
@@ -99,8 +27,7 @@ void mot_pap_init()
  * @returns	MOT_PAP_DIRECTION_CW if error is positive
  * @returns	MOT_PAP_DIRECTION_CCW if error is negative
  */
-enum mot_pap_direction mot_pap_direction_calculate(int32_t error)
-{
+enum mot_pap_direction mot_pap_direction_calculate(int32_t error) {
 	return error < 0 ? MOT_PAP_DIRECTION_CW : MOT_PAP_DIRECTION_CCW;
 }
 
@@ -109,8 +36,7 @@ enum mot_pap_direction mot_pap_direction_calculate(int32_t error)
  * @param 	speed : the requested speed
  * @returns	true if speed is in the allowed range
  */
-bool mot_pap_free_run_speed_ok(uint32_t speed)
-{
+bool mot_pap_free_run_speed_ok(uint32_t speed) {
 	return ((speed > 0) && (speed <= MOT_PAP_MAX_SPEED_FREE_RUN));
 }
 
@@ -122,8 +48,7 @@ bool mot_pap_free_run_speed_ok(uint32_t speed)
  * @returns	nothing
  */
 void mot_pap_move_free_run(struct mot_pap *me, enum mot_pap_direction direction,
-		int speed)
-{
+		int speed) {
 	if (mot_pap_free_run_speed_ok(speed)) {
 		me->stalled = false; // If a new command was received, assume we are not stalled
 		me->stalled_counter = 0;
@@ -151,9 +76,7 @@ void mot_pap_move_free_run(struct mot_pap *me, enum mot_pap_direction direction,
 }
 
 void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
-		int speed, int steps, int step_time,
-		int step_amplitude_divider)
-{
+		int speed, int steps, int step_time, int step_amplitude_divider) {
 	if (mot_pap_free_run_speed_ok(speed)) {
 		me->stalled = false; // If a new command was received, assume we are not stalled
 		me->stalled_counter = 0;
@@ -162,8 +85,8 @@ void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
 
 		if (me->type != MOT_PAP_TYPE_STOP) {
 			me->stop = true;
-			me->wait_until_stop_semaphore = xSemaphoreCreateBinary();
-			xSemaphoreTake(me->wait_until_stop_semaphore, portMAX_DELAY);
+			//me->wait_until_stop_semaphore = xSemaphoreCreateBinary();
+			//xSemaphoreTake(me->wait_until_stop_semaphore, portMAX_DELAY);
 		}
 
 		me->stop = false;
@@ -180,7 +103,6 @@ void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
 		me->half_steps_to_middle = me->half_steps_requested >> 1;
 		me->max_speed_reached = false;
 		me->ticks_last_time = xTaskGetTickCount();
-		x_zs = false;
 		me->dir = direction;
 		gpio_set_pin_state(me->gpios.direction, me->dir);
 		tmr_stop(&(me->tmr));
@@ -201,8 +123,7 @@ void mot_pap_move_steps(struct mot_pap *me, enum mot_pap_direction direction,
  * @param 	setpoint	: the resolver value to reach
  * @returns	nothing
  */
-void mot_pap_move_closed_loop(struct mot_pap *me, uint16_t setpoint)
-{
+void mot_pap_move_closed_loop(struct mot_pap *me, uint16_t setpoint) {
 	int32_t error;
 	enum mot_pap_direction dir;
 	me->stalled = false; // If a new command was received, assume we are not stalled
@@ -220,7 +141,9 @@ void mot_pap_move_closed_loop(struct mot_pap *me, uint16_t setpoint)
 		tmr_stop(&(me->tmr));
 		lDebug(Info, "%s: already there", me->name);
 	} else {
-		dir = mot_pap_direction_calculate(error);
+		int out = pid_run(&(me->pid), me->posCmd, me->posAct);
+
+		dir = (out < 0) ? MOT_PAP_DIRECTION_CW : MOT_PAP_DIRECTION_CCW;
 		if ((me->dir != dir) && (me->type != MOT_PAP_TYPE_STOP)) {
 			tmr_stop(&(me->tmr));
 			vTaskDelay(pdMS_TO_TICKS(MOT_PAP_DIRECTION_CHANGE_DELAY_MS));
@@ -228,7 +151,7 @@ void mot_pap_move_closed_loop(struct mot_pap *me, uint16_t setpoint)
 		me->type = MOT_PAP_TYPE_CLOSED_LOOP;
 		me->dir = dir;
 		gpio_set_pin_state(me->gpios.direction, me->dir);
-		me->requested_freq = MOT_PAP_MAX_FREQ;
+		me->requested_freq = abs(out);
 		tmr_stop(&(me->tmr));
 		tmr_set_freq(&(me->tmr), me->requested_freq);
 		tmr_start(&(me->tmr));
@@ -240,8 +163,7 @@ void mot_pap_move_closed_loop(struct mot_pap *me, uint16_t setpoint)
  * @param 	me	: struct mot_pap pointer
  * @returns	nothing
  */
-void mot_pap_stop(struct mot_pap *me)
-{
+void mot_pap_stop(struct mot_pap *me) {
 	me->type = MOT_PAP_TYPE_STOP;
 	tmr_stop(&(me->tmr));
 	lDebug(Info, "%s: STOP", me->name);
@@ -253,12 +175,10 @@ void mot_pap_stop(struct mot_pap *me)
  * @returns nothing
  * @note	to be called by the deferred interrupt task handler
  */
-void mot_pap_supervisor_task()
-{
+void mot_pap_supervise(struct mot_pap *me) {
 	while (true) {
-		struct mot_pap *me;
 
-		if (xQueueReceive(mot_pap_supervisor_task_queue, &me,
+		if (xSemaphoreTake(me->supervisor_semaphore,
 		portMAX_DELAY) == pdPASS) {
 			if (stall_detection) {
 				if (abs(
@@ -289,65 +209,83 @@ void mot_pap_supervisor_task()
 			int ticks_now = xTaskGetTickCount();
 
 			if ((ticks_now - me->ticks_last_time) > pdMS_TO_TICKS(me->step_time)) {
-				bool first_half_passed = false;
-				if (me->type == MOT_PAP_TYPE_STEPS)
+				/*****************/
+				/*	   STEPS     */
+				/*****************/
+				if (me->type == MOT_PAP_TYPE_STEPS) {
+					bool first_half_passed = false;
 					first_half_passed = me->half_steps_curr
 							> (me->half_steps_to_middle);
 
-				if (me->type == MOT_PAP_TYPE_CLOSED_LOOP)
-					first_half_passed =
-							(me->dir == MOT_PAP_DIRECTION_CW) ?
-									me->posAct > (me->posCmdMiddle) :
-									me->posAct < (me->posCmdMiddle);
+					if (!me->max_speed_reached && (!first_half_passed)
+							&& !me->stop) {
+						me->current_freq += (me->freq_delta);
+						if (me->current_freq >= me->requested_freq) {
+							me->current_freq = me->requested_freq;
+							me->max_speed_reached = true;
+							if (me->type == MOT_PAP_TYPE_STEPS)
+								me->max_speed_reached_distance =
+										me->half_steps_curr;
 
-				if (!me->max_speed_reached && (!first_half_passed)
-						&& !me->stop) {
-					me->current_freq += (me->freq_delta);
-					if (me->current_freq >= me->requested_freq) {
-						me->current_freq = me->requested_freq;
-						me->max_speed_reached = true;
-						if (me->type == MOT_PAP_TYPE_STEPS)
-							me->max_speed_reached_distance =
-									me->half_steps_curr;
-
-						if (me->type == MOT_PAP_TYPE_CLOSED_LOOP)
-							me->max_speed_reached_distance = me->posAct;
-					}
-				}
-
-				if (x_zs) {
-					me->stop = true;
-				}
-
-				int distance_left = 0;
-				if (me->type == MOT_PAP_TYPE_STEPS)
-					distance_left = me->half_steps_requested
-							- me->half_steps_curr;
-
-				if (me->type == MOT_PAP_TYPE_CLOSED_LOOP)
-					distance_left = me->posCmd - me->posAct;
-
-				if ((me->max_speed_reached
-						&& distance_left <= me->max_speed_reached_distance)
-						|| (!me->max_speed_reached && first_half_passed)
-						|| me->stop) {
-					me->current_freq -= (me->freq_delta);
-					if (me->current_freq <= me->freq_delta) {
-						me->current_freq = me->freq_delta;
-						if (me->stop) {
-							tmr_stop(&(me->tmr));
-							me->type = MOT_PAP_TYPE_STOP;
-							if (me->wait_until_stop_semaphore) {
-								xSemaphoreGive(me->wait_until_stop_semaphore);
-							}
-							goto end;
 						}
 					}
 
+					int distance_left = 0;
+					if (me->type == MOT_PAP_TYPE_STEPS)
+						distance_left = me->half_steps_requested
+								- me->half_steps_curr;
+
+					if (me->type == MOT_PAP_TYPE_CLOSED_LOOP)
+						distance_left = me->posCmd - me->posAct;
+
+					if ((me->max_speed_reached
+							&& distance_left <= me->max_speed_reached_distance)
+							|| (!me->max_speed_reached && first_half_passed)
+							|| me->stop) {
+						me->current_freq -= (me->freq_delta);
+						if (me->current_freq <= me->freq_delta) {
+							me->current_freq = me->freq_delta;
+							if (me->stop) {
+								tmr_stop(&(me->tmr));
+								me->type = MOT_PAP_TYPE_STOP;
+//								if (me->wait_until_stop_semaphore) {
+//									xSemaphoreGive(
+//											me->wait_until_stop_semaphore);
+//								}
+								goto end;
+							}
+						}
+
+					}
+					tmr_stop(&(me->tmr));
+					tmr_set_freq(&(me->tmr), me->current_freq);
+					tmr_start(&(me->tmr));
 				}
-				tmr_stop(&(me->tmr));
-				tmr_set_freq(&(me->tmr), me->current_freq);
-				tmr_start(&(me->tmr));
+
+				/*****************/
+				/*	CLOSED LOOP	 */
+				/*****************/
+				if (me->type == MOT_PAP_TYPE_CLOSED_LOOP) {
+					int out = pid_run(&(me->pid), me->posCmd, me->posAct);
+
+					enum mot_pap_direction dir =
+							(out < 0) ?
+									MOT_PAP_DIRECTION_CW :
+									MOT_PAP_DIRECTION_CCW;
+					if ((me->dir != dir) && (me->type != MOT_PAP_TYPE_STOP)) {
+						tmr_stop(&(me->tmr));
+						vTaskDelay(
+								pdMS_TO_TICKS(
+										MOT_PAP_DIRECTION_CHANGE_DELAY_MS));
+					}
+					me->type = MOT_PAP_TYPE_CLOSED_LOOP;
+					me->dir = dir;
+					gpio_set_pin_state(me->gpios.direction, me->dir);
+					me->requested_freq = abs(out);
+					tmr_stop(&(me->tmr));
+					tmr_set_freq(&(me->tmr), me->requested_freq);
+					tmr_start(&(me->tmr));
+				}
 
 				me->ticks_last_time = ticks_now;
 			}
@@ -360,8 +298,7 @@ void mot_pap_supervisor_task()
  * @brief 	function called by the timer ISR to generate the output pulses
  * @param 	me : struct mot_pap pointer
  */
-void mot_pap_isr(struct mot_pap *me)
-{
+void mot_pap_isr(struct mot_pap *me) {
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 	me->posAct = count_a;
 
@@ -378,7 +315,7 @@ void mot_pap_isr(struct mot_pap *me)
 	if (me->already_there) {
 		me->type = MOT_PAP_TYPE_STOP;
 		tmr_stop(&(me->tmr));
-		xQueueSendFromISR(mot_pap_supervisor_task_queue, &me,
+		xSemaphoreGiveFromISR(me->supervisor_semaphore,
 				&xHigherPriorityTaskWoken);
 		portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 		goto cont;
@@ -390,7 +327,8 @@ void mot_pap_isr(struct mot_pap *me)
 
 	if (++(me->half_pulses) == MOT_PAP_SUPERVISOR_RATE) {
 		me->half_pulses = 0;
-		xQueueSendFromISR(mot_pap_supervisor_task_queue, &me,
+		xHigherPriorityTaskWoken = pdFALSE;
+		xSemaphoreGiveFromISR(me->supervisor_semaphore,
 				&xHigherPriorityTaskWoken);
 		portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 	}
@@ -403,8 +341,7 @@ void mot_pap_isr(struct mot_pap *me)
  * @param 	me : struct mot_pap pointer
  */
 
-void mot_pap_update_position(struct mot_pap *me)
-{
+void mot_pap_update_position(struct mot_pap *me) {
 	if (me->dir == MOT_PAP_DIRECTION_CW) {
 		++me->encoder_count;
 	} else {
@@ -420,8 +357,7 @@ void mot_pap_update_position(struct mot_pap *me)
  * @param 	offset		: RDC position for 0 degrees
  * @returns	nothing
  */
-void mot_pap_set_offset(struct mot_pap *me, uint16_t offset)
-{
+void mot_pap_set_offset(struct mot_pap *me, uint16_t offset) {
 	me->offset = offset;
 }
 
@@ -429,14 +365,12 @@ void mot_pap_set_offset(struct mot_pap *me, uint16_t offset)
  * @brief	returns status of the X axis task.
  * @returns copy of status structure of the task
  */
-struct mot_pap* mot_pap_get_status(struct mot_pap *me)
-{
+struct mot_pap* mot_pap_get_status(struct mot_pap *me) {
 	mot_pap_read_corrected_pos(me);
 	return me;
 }
 
-JSON_Value* mot_pap_json(struct mot_pap *me)
-{
+JSON_Value* mot_pap_json(struct mot_pap *me) {
 	JSON_Value *ans = json_value_init_object();
 	json_object_set_number(json_value_get_object(ans), "posCmd", me->posCmd);
 	json_object_set_number(json_value_get_object(ans), "posAct", me->posAct);

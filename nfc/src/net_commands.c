@@ -14,8 +14,6 @@
 
 #define PROTOCOL_VERSION  	"JSON_1.0"
 
-extern QueueHandle_t mot_pap_queue;
-
 bool stall_detection = true;
 extern int count_z;
 extern int count_b;
@@ -38,7 +36,7 @@ JSON_Value* telemetria_cmd(JSON_Value const *pars)
 	json_object_set_number(json_value_get_object(ans), "cuentas A", x_axis.encoder_count);
 	json_object_set_number(json_value_get_object(ans), "cuentas B", count_b);
 	json_object_set_number(json_value_get_object(ans), "cuentas Z", count_z);
-	json_object_set_boolean(json_value_get_object(ans), "ZS x", x_zs);
+	json_object_set_boolean(json_value_get_object(ans), "ZS x", x_axis.stop);
 
 	//json_object_set_value(json_value_get_object(ans), "eje_x", mot_pap_json(&x_axis));
 
@@ -176,23 +174,25 @@ JSON_Value* axis_free_run_steps_cmd(JSON_Value const *pars)
 			msg->free_run_speed = (int) speed;
 			msg->steps = (int) steps;
 
+			QueueHandle_t *queue = NULL;
+
 			switch (*axis) {
 				case 'x':
 				case 'X':
-						msg->axis = &x_axis;
+						queue = &x_axis.queue;
 						break;
-				case 'y':
-				case 'Y':
-						msg->axis = &y_axis;
-						break;
-				case 'z':
-				case 'Z':
-						msg->axis = &z_axis;
-					break;
+//				case 'y':
+//				case 'Y':
+//						axis_ = &y_axis_;
+//						break;
+//				case 'z':
+//				case 'Z':
+//						msg->axis = &z_axis;
+//					break;
 				default:
 					break;
 			}
-			if (xQueueSend(mot_pap_queue, &msg, portMAX_DELAY) == pdPASS) {
+			if (xQueueSend(*queue, &msg, portMAX_DELAY) == pdPASS) {
 				lDebug(Debug, " Comando enviado a arm.c exitoso!");
 			}
 		}

@@ -57,7 +57,6 @@ static void prvSetupHardware(void)
 	settings_init();
 	//settings_erase();
 	relay_init();
-	mot_pap_init();
 	x_zs_init();
 	x_axis_init();
 	y_axis_init();

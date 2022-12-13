@@ -9,6 +9,7 @@
 #include "tmr.h"
 #include "parson.h"
 #include "gpio.h"
+#include "pid.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -73,7 +74,7 @@ struct mot_pap {
 	bool max_speed_reached;
 	bool already_there;
 	bool stalled;
-	bool stop;
+	volatile bool stop;
 
 	int posAct;
 	int posCmd;
@@ -99,10 +100,14 @@ struct mot_pap {
 
 	struct mot_pap_gpios gpios;
 	struct tmr tmr;
-	SemaphoreHandle_t wait_until_stop_semaphore;
+	QueueHandle_t queue;
+	SemaphoreHandle_t supervisor_semaphore;
+	struct pid pid;
 };
 
 void mot_pap_init();
+
+void mot_pap_supervise(struct mot_pap *me);
 
 uint16_t mot_pap_offset_correction(uint16_t pos, uint16_t offset,
 		uint8_t resolution);
