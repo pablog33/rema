@@ -40,6 +40,7 @@ static void x_axis_task(void *par)
 			x_axis.stalled = false; 		// If a new command was received, assume we are not stalled
 			x_axis.stalled_counter = 0;
 			x_axis.already_there = false;
+			x_axis.step_time = 100;
 
 			//mot_pap_read_corrected_pos(&x_axis);
 
@@ -55,7 +56,7 @@ static void x_axis_task(void *par)
 
 			case MOT_PAP_TYPE_STEPS:
 				mot_pap_move_steps(msg_rcv->axis, msg_rcv->free_run_direction,
-						msg_rcv->free_run_speed, msg_rcv->steps, 100, 50);
+						msg_rcv->free_run_speed, msg_rcv->steps, 200, 50);
 				break;
 
 			default:
@@ -105,13 +106,14 @@ void x_axis_init() {
 
 	tmr_init(&x_axis.tmr);
 
-	pid_init(&x_axis.pid, 10.0,						//!< Kp
-			10.0,									//!< Ki
-			1.0,									//!< Kd
+	pid_init(&x_axis.pid, 10,						//!< Kp
+			10,										//!< Ki
+			10,										//!< Kd
 			PID_DIRECT,								//!< Control type
-			100.0,									//!< Update rate (ms)
-			-125000,									//!< Min output
-			125000									//!< Max output
+			x_axis.step_time,						//!< Update rate (ms)
+			-100000,								//!< Min output
+			100000,									//!< Max output
+			10000									//!< Absolute Min output
 			);
 
 	x_axis.supervisor_semaphore = xSemaphoreCreateBinary();
