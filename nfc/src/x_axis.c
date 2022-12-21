@@ -14,7 +14,7 @@
 #include "debug.h"
 #include "tmr.h"
 #include "gpio.h"
-#include "pid.h"
+#include "kp.h"
 
 #define X_AXIS_TASK_PRIORITY ( configMAX_PRIORITIES - 1 )
 #define X_AXIS_SUPERVISOR_TASK_PRIORITY ( configMAX_PRIORITIES - 3)
@@ -106,10 +106,8 @@ void x_axis_init() {
 
 	tmr_init(&x_axis.tmr);
 
-	pid_init(&x_axis.pid, 10,						//!< Kp
-			10,										//!< Ki
-			10,										//!< Kd
-			PID_DIRECT,								//!< Control type
+	kp_init(&x_axis.kp,100,						//!< Kp
+			KP_DIRECT,								//!< Control type
 			x_axis.step_time,						//!< Update rate (ms)
 			-100000,								//!< Min output
 			100000,									//!< Max output

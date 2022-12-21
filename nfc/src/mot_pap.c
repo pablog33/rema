@@ -143,9 +143,9 @@ void mot_pap_move_closed_loop(struct mot_pap *me, int setpoint)
 		tmr_stop(&(me->tmr));
 		lDebug(Info, "%s: already there", me->name);
 	} else {
-		pid_restart(&(me->pid), me->pos_act);
+		kp_restart(&(me->kp), me->pos_act);
 
-		int out = pid_run(&(me->pid), me->pos_cmd, me->pos_act);
+		int out = kp_run(&(me->kp), me->pos_cmd, me->pos_act);
 
 		dir = mot_pap_direction_calculate(out);
 		if ((me->dir != dir) && (me->type != MOT_PAP_TYPE_STOP)) {
@@ -269,7 +269,7 @@ void mot_pap_supervise(struct mot_pap *me)
 			/*	CLOSED LOOP	 */
 			/*****************/
 			if (me->type == MOT_PAP_TYPE_CLOSED_LOOP) {
-				int out = pid_run(&(me->pid), me->pos_cmd, me->pos_act);
+				int out = kp_run(&(me->kp), me->pos_cmd, me->pos_act);
 				lDebug(Info, "Control output = %i: ", out);
 //				if (abs(out) < 10) {
 //					lDebug(Info, "%s: position reached", me->name);

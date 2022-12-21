@@ -156,8 +156,6 @@ JSON_Value* pid_set_tunings_cmd(JSON_Value const *pars)
 		char const *axis = json_object_get_string(json_value_get_object(pars),
 				"axis");
 		int kp = (int)json_object_get_number(json_value_get_object(pars), "kp");
-		int ki = (int)json_object_get_number(json_value_get_object(pars), "ki");
-		int kd = (int)json_object_get_number(json_value_get_object(pars), "kd");
 		int update = (int)json_object_get_number(json_value_get_object(pars),
 				"update");
 		int min = (int)json_object_get_number(json_value_get_object(pars), "min");
@@ -184,9 +182,9 @@ JSON_Value* pid_set_tunings_cmd(JSON_Value const *pars)
 			break;
 		}
 
-		pid_init(&(axis_->pid), kp, ki, kd, PID_DIRECT, update, min, max, abs_min);
+		kp_init(&(axis_->kp), kp, KP_DIRECT, update, min, max, abs_min);
 		axis_->step_time = update;
-		lDebug(Debug, "PID Settings set");
+		lDebug(Debug, "KP Settings set");
 
 	}
 	JSON_Value *ans = json_value_init_object();

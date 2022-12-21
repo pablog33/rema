@@ -9,7 +9,7 @@
 #include "tmr.h"
 #include "parson.h"
 #include "gpio.h"
-#include "pid.h"
+#include "kp.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -101,7 +101,7 @@ struct mot_pap {
 	struct tmr tmr;
 	QueueHandle_t queue;
 	SemaphoreHandle_t supervisor_semaphore;
-	struct pid pid;
+	struct kp kp;
 };
 
 void mot_pap_init();
