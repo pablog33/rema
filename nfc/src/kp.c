@@ -52,6 +52,7 @@ int kp_run(struct kp *this, int setpoint, int input) {
 	// PROPORTIONAL CALCS
 	this->p_term = this->zp * error;
 
+	this->output = this->p_term;
 
 	// Limit output
 	if (this->output > this->out_max)

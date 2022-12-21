@@ -13,23 +13,10 @@ enum kp_controller_direction {
 	KP_REVERSE			//!< Reverse driver (+error gives -output)
 };
 
-//! Used to determine whether the output shouldn't be accumulated (distance control),
-//! or accumulated (velocity control).
-enum kp_output_mode {
-	DONT_ACCUMULATE_OUTPUT,
-	ACCUMULATE_OUTPUT,
-	DISTANCE_KP = DONT_ACCUMULATE_OUTPUT,
-	VELOCITY_KP = ACCUMULATE_OUTPUT
-};
-
 //! @brief 		Error proportional -kp- control for frequency output.
 struct kp {
 	//! @brief 		The set-point the error proportional -kp- control is trying to make the output converge to.
 	int setpoint;
-
-	int prev_setpoint;
-	int setpoint_jump;
-
 
 	//! @brief		The control output.
 	//! @details	This is updated when kp_run() is called.
@@ -56,7 +43,7 @@ struct kp {
 	//! @details	The constants with the z prefix are scaled according to this value.
 	int sample_period_ms;
 
-	int p_term;//!< The proportional term that is summed as part of the output (calculated in Pid_Run())
+	int p_term;		//!< The proportional term that is summed as part of the output (calculated in Pid_Run())
 	int out_min;	//!< The minimum output value. Anything lower will be limited to this floor.
 	int out_max;	//!< The maximum output value. Anything higher will be limited to this ceiling.
 	int out_abs_min;	//!< The absolute minimum output value. Anything lower will be limited to this floor.
@@ -68,9 +55,6 @@ struct kp {
 
 	//! @brief		The controller direction (FORWARD or REVERSE).
 	enum kp_controller_direction controller_dir;
-
-	//! @brief		The output mode (non-accumulating vs. accumulating) for the control loop.
-	enum kp_output_mode output_mode;
 };
 
 //! @brief 		Init function

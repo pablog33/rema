@@ -149,7 +149,7 @@ JSON_Value* axis_closed_loop_cmd(JSON_Value const *pars)
 	return ans;
 }
 
-JSON_Value* pid_set_tunings_cmd(JSON_Value const *pars)
+JSON_Value* kp_set_tunings_cmd(JSON_Value const *pars)
 {
 	if (pars && json_value_get_type(pars) == JSONObject) {
 
@@ -405,8 +405,8 @@ const cmd_entry cmds_table[] = {
 				logs_cmd,
 		},
 		{
-				"PID_SET_TUNINGS",
-				pid_set_tunings_cmd,
+				"KP_SET_TUNINGS",
+				kp_set_tunings_cmd,
 		},
 		{
 				"NETWORK_SETTINGS",
